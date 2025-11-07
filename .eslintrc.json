@@ -1,0 +1,17 @@
+{
+  "extends": ["react-app"],
+  "env": {
+    "browser": true,
+    "es6": true,
+    "jquery": true
+  },
+  "globals": {
+    "wp": "readonly",
+    "mediagraphPicker": "readonly",
+    "jQuery": "readonly"
+  },
+  "rules": {
+    "no-console": "warn",
+    "react/prop-types": "off"
+  }
+}
