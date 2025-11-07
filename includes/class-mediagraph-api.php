@@ -43,7 +43,7 @@ class Mediagraph_API {
      * Constructor
      */
     public function __construct() {
-        $this->api_base_url = get_option( 'mediagraph_api_base_url', 'https://api.mediagraph.io' );
+        $this->api_base_url = get_option( 'mediagraph_api_base_url', 'https://mediagraph.io' );
         $this->access_token = get_option( 'mediagraph_access_token', '' );
         $this->organization_id = get_option( 'mediagraph_organization_id', '' );
     }

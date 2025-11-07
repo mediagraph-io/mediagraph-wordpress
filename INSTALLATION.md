@@ -56,7 +56,7 @@ For self-hosted or custom Mediagraph instances:
 
 1. Go to **Settings > Mediagraph**
 2. Scroll to **Advanced Settings**
-3. Update the **API Base URL** (default: `https://api.mediagraph.io`)
+3. Update the **API Base URL** (default: `https://mediagraph.io`)
 4. Click **Save Changes**
 5. Reconnect to Mediagraph
 

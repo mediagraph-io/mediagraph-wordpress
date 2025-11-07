@@ -238,13 +238,14 @@ class Mediagraph_Picker {
             'mediagraph-picker',
             'mediagraphPicker',
             array(
-                'ajaxUrl'        => admin_url( 'admin-ajax.php' ),
-                'nonce'          => wp_create_nonce( 'mediagraph_picker_nonce' ),
-                'isConnected'    => $is_connected,
-                'organizationId' => get_option( 'mediagraph_organization_id', '' ),
-                'apiBaseUrl'     => get_option( 'mediagraph_api_base_url', 'https://api.mediagraph.io' ),
-                'platform'       => get_option( 'mediagraph_platform', 'wordpress' ),
-                'strings'        => array(
+                'ajaxUrl'          => admin_url( 'admin-ajax.php' ),
+                'nonce'            => wp_create_nonce( 'mediagraph_picker_nonce' ),
+                'isConnected'      => $is_connected,
+                'organizationId'   => get_option( 'mediagraph_organization_id', '' ),
+                'organizationName' => get_option( 'mediagraph_organization_name', '' ),
+                'apiBaseUrl'       => get_option( 'mediagraph_api_base_url', 'https://mediagraph.io' ),
+                'platform'         => get_option( 'mediagraph_platform', 'wordpress' ),
+                'strings'          => array(
                     'notConnected' => __( 'Please connect to Mediagraph in Settings > Mediagraph', 'mediagraph-picker' ),
                     'loading'      => __( 'Loading...', 'mediagraph-picker' ),
                     'error'        => __( 'An error occurred. Please try again.', 'mediagraph-picker' ),

@@ -58,7 +58,7 @@ class Mediagraph_OAuth {
      */
     public function __construct() {
         // Use configurable API base URL, defaulting to production
-        $this->api_base_url = get_option( 'mediagraph_api_base_url', 'https://api.mediagraph.io' );
+        $this->api_base_url = get_option( 'mediagraph_api_base_url', 'https://mediagraph.io' );
 
         // Build OAuth URLs
         // For authorize URL (browser-facing), replace host.docker.internal with localhost
@@ -309,13 +309,16 @@ class Mediagraph_OAuth {
             update_option( 'mediagraph_user_name', $user_info['name'] );
         }
 
-        // Store organization info (API returns 'last_organization' not 'organization')
-        if ( isset( $user_info['last_organization'] ) ) {
-            if ( isset( $user_info['last_organization']['id'] ) ) {
-                update_option( 'mediagraph_organization_id', $user_info['last_organization']['id'] );
+        // Store organization info (use 'organization' which reflects the current OAuth context)
+        // Falls back to 'last_organization' if 'organization' is not present
+        $org_data = isset( $user_info['organization'] ) ? $user_info['organization'] : ( isset( $user_info['last_organization'] ) ? $user_info['last_organization'] : null );
+
+        if ( $org_data ) {
+            if ( isset( $org_data['id'] ) ) {
+                update_option( 'mediagraph_organization_id', $org_data['id'] );
             }
-            if ( isset( $user_info['last_organization']['title'] ) ) {
-                update_option( 'mediagraph_organization_name', $user_info['last_organization']['title'] );
+            if ( isset( $org_data['title'] ) ) {
+                update_option( 'mediagraph_organization_name', $org_data['title'] );
             }
         }
 

@@ -35,7 +35,7 @@ class Mediagraph_Settings {
         register_setting( 'mediagraph_settings', 'mediagraph_api_base_url', array(
             'type'              => 'string',
             'sanitize_callback' => 'esc_url_raw',
-            'default'           => 'https://api.mediagraph.io',
+            'default'           => 'https://mediagraph.io',
         ));
 
         // Platform selection
@@ -100,7 +100,7 @@ class Mediagraph_Settings {
      * Render API Base URL field
      */
     public function render_api_base_url_field() {
-        $value = get_option( 'mediagraph_api_base_url', 'https://api.mediagraph.io' );
+        $value = get_option( 'mediagraph_api_base_url', 'https://mediagraph.io' );
         printf(
             '<input type="url" name="mediagraph_api_base_url" value="%s" class="regular-text" />',
             esc_attr( $value )
