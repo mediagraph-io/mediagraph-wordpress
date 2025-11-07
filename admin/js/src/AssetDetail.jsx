@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 
 const AssetDetail = ({ asset, onClose, onInsert, ajaxUrl, nonce }) => {
   const [isLoading, setIsLoading] = useState(true);
+  const [isInserting, setIsInserting] = useState(false);
   const [error, setError] = useState(null);
   const [assetData, setAssetData] = useState(null);
 
@@ -32,6 +33,20 @@ const AssetDetail = ({ asset, onClose, onInsert, ajaxUrl, nonce }) => {
   useEffect(() => {
     loadAssetDetails();
   }, [asset.id]);
+
+  // Handle Escape key to close modal
+  useEffect(() => {
+    const handleEscapeKey = (event) => {
+      if (event.key === 'Escape' && !isInserting) {
+        onClose();
+      }
+    };
+
+    document.addEventListener('keydown', handleEscapeKey);
+    return () => {
+      document.removeEventListener('keydown', handleEscapeKey);
+    };
+  }, [isInserting, onClose]);
 
   /**
    * Load full asset details from API
@@ -69,6 +84,7 @@ const AssetDetail = ({ asset, onClose, onInsert, ajaxUrl, nonce }) => {
           ? data.data.tags.map(tag => tag.name).join(', ')
           : '';
 
+        // Pre-fill metadata from API
         setMetadata({
           title: data.data.title || '',
           byline: data.data.credit_line || creatorString || '',
@@ -112,8 +128,14 @@ const AssetDetail = ({ asset, onClose, onInsert, ajaxUrl, nonce }) => {
   /**
    * Handle insert button click
    */
-  const handleInsertClick = () => {
-    onInsert(assetData || asset, metadata, displaySettings);
+  const handleInsertClick = async () => {
+    setIsInserting(true);
+    try {
+      await onInsert(assetData || asset, metadata, displaySettings);
+    } catch (err) {
+      // Error will be handled by parent component
+      setIsInserting(false);
+    }
   };
 
   /**
@@ -443,10 +465,17 @@ const AssetDetail = ({ asset, onClose, onInsert, ajaxUrl, nonce }) => {
           <button
             onClick={handleInsertClick}
             className="mediagraph-button mediagraph-button-primary"
-            disabled={isRestricted}
+            disabled={isRestricted || isInserting}
             title={isRestricted ? 'You do not have download permission' : 'Insert into post'}
           >
-            {isRestricted ? '🔒 No Permission' : 'Insert into Post'}
+            {isInserting ? (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                <span className="mediagraph-spinner" style={{ width: '14px', height: '14px', borderWidth: '2px' }}></span>
+                <span>Downloading...</span>
+              </span>
+            ) : (
+              isRestricted ? '🔒 No Permission' : 'Insert into Post'
+            )}
           </button>
         </div>
       </div>

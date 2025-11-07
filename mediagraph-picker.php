@@ -126,11 +126,15 @@ class Mediagraph_Picker {
         add_action( 'wp_ajax_mediagraph_search_assets', array( $this, 'ajax_search_assets' ) );
         add_action( 'wp_ajax_mediagraph_get_asset', array( $this, 'ajax_get_asset' ) );
         add_action( 'wp_ajax_mediagraph_get_download_url', array( $this, 'ajax_get_download_url' ) );
+        add_action( 'wp_ajax_mediagraph_download_asset', array( $this, 'ajax_download_asset' ) );
         add_action( 'wp_ajax_mediagraph_save_assets', array( $this, 'ajax_save_assets' ) );
 
         // Post publish hook for write-back
         add_action( 'publish_post', array( $this, 'handle_post_publish' ), 10, 2 );
         add_action( 'publish_page', array( $this, 'handle_post_publish' ), 10, 2 );
+
+        // Add Mediagraph fields to attachment details
+        add_filter( 'attachment_fields_to_edit', array( $this, 'add_mediagraph_fields_to_attachment' ), 10, 2 );
 
         // Internationalization
         add_action( 'plugins_loaded', array( $this, 'load_textdomain' ) );
@@ -434,6 +438,41 @@ class Mediagraph_Picker {
     }
 
     /**
+     * AJAX: Download asset to WordPress media library
+     */
+    public function ajax_download_asset() {
+        check_ajax_referer( 'mediagraph_picker_nonce', 'nonce' );
+
+        $asset_id = isset( $_POST['asset_id'] ) ? sanitize_text_field( wp_unslash( $_POST['asset_id'] ) ) : '';
+        $size = isset( $_POST['size'] ) ? sanitize_text_field( wp_unslash( $_POST['size'] ) ) : 'original';
+        $post_id = isset( $_POST['post_id'] ) ? intval( $_POST['post_id'] ) : 0;
+        $metadata = isset( $_POST['metadata'] ) ? json_decode( wp_unslash( $_POST['metadata'] ), true ) : array();
+
+        if ( empty( $asset_id ) ) {
+            wp_send_json_error( array( 'message' => __( 'Asset ID is required', 'mediagraph-picker' ) ) );
+        }
+
+        // Download asset to media library and associate with post
+        $attachment_id = $this->api->download_to_media_library( $asset_id, $metadata, $post_id );
+
+        if ( is_wp_error( $attachment_id ) ) {
+            wp_send_json_error( array( 'message' => $attachment_id->get_error_message() ) );
+        }
+
+        // Get WordPress attachment URL
+        $attachment_url = wp_get_attachment_url( $attachment_id );
+
+        if ( ! $attachment_url ) {
+            wp_send_json_error( array( 'message' => __( 'Failed to get attachment URL', 'mediagraph-picker' ) ) );
+        }
+
+        wp_send_json_success( array(
+            'url' => $attachment_url,
+            'attachment_id' => $attachment_id
+        ) );
+    }
+
+    /**
      * AJAX: Save Mediagraph assets to post meta
      */
     public function ajax_save_assets() {
@@ -616,6 +655,30 @@ class Mediagraph_Picker {
 
         // Also enqueue the main picker assets (modal, CSS, etc.)
         $this->enqueue_admin_scripts( 'post.php' );
+    }
+
+    /**
+     * Add Mediagraph fields to attachment edit screen
+     *
+     * @param array   $form_fields Array of form fields
+     * @param WP_Post $post        Attachment post object
+     * @return array Modified form fields
+     */
+    public function add_mediagraph_fields_to_attachment( $form_fields, $post ) {
+        // Get Mediagraph GUID
+        $asset_guid = get_post_meta( $post->ID, '_mediagraph_guid', true );
+
+        // Only show if this is a Mediagraph asset
+        if ( ! empty( $asset_guid ) ) {
+            $form_fields['mediagraph_guid'] = array(
+                'label' => __( 'Mediagraph GUID', 'mediagraph-picker' ),
+                'input' => 'html',
+                'html'  => '<input type="text" class="text" readonly="readonly" value="' . esc_attr( $asset_guid ) . '" />',
+                'helps' => __( 'The globally unique identifier for this asset', 'mediagraph-picker' ),
+            );
+        }
+
+        return $form_fields;
     }
 
     /**

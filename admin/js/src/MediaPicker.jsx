@@ -10,6 +10,53 @@ import AssetGrid from './AssetGrid';
 import AssetDetail from './AssetDetail';
 import SearchBar from './SearchBar';
 
+/**
+ * Static HTML builder for Gutenberg blocks to use
+ * This is exposed globally so blocks can rebuild HTML when settings change
+ */
+window.mediagraphBuildHtml = function(url, metadata, displaySettings, assetType = null) {
+  const { alignment, linkTo } = displaySettings;
+  const isVideo = assetType === 'video' || (url && url.match(/\.(mp4|mov|avi|webm)$/i));
+  const isAudio = assetType === 'audio' || (url && url.match(/\.(mp3|wav|ogg)$/i));
+
+  let html = '';
+
+  if (isVideo) {
+    html = `<video src="${url}" controls`;
+    if (alignment && alignment !== 'none') {
+      html += ` class="align${alignment}"`;
+    }
+    html += ' style="max-width: 100%;">';
+    html += '</video>';
+  } else if (isAudio) {
+    html = `<audio src="${url}" controls`;
+    if (alignment && alignment !== 'none') {
+      html += ` class="align${alignment}"`;
+    }
+    html += ' style="max-width: 100%;">';
+    html += '</audio>';
+  } else {
+    html = `<img src="${url}" alt="${metadata.alt_text || ''}"`;
+    if (metadata.title) {
+      html += ` title="${metadata.title}"`;
+    }
+    if (alignment && alignment !== 'none') {
+      html += ` class="align${alignment}"`;
+    }
+    html += ' />';
+
+    if (linkTo && linkTo !== 'none') {
+      html = `<a href="${url}">${html}</a>`;
+    }
+  }
+
+  if (metadata.description) {
+    html = `<figure>${html}<figcaption>${metadata.description}</figcaption></figure>`;
+  }
+
+  return html;
+};
+
 const MediaPicker = ({ editorId }) => {
   // State management
   const [isOpen, setIsOpen] = useState(true);
@@ -36,9 +83,38 @@ const MediaPicker = ({ editorId }) => {
   // Selected asset for detail view
   const [selectedAsset, setSelectedAsset] = useState(null);
 
+
   // Get localized data from WordPress
   const pickerData = window.mediagraphPicker || {};
   const { ajaxUrl, nonce, isConnected } = pickerData;
+
+  /**
+   * Get current post ID from WordPress editor
+   */
+  const getCurrentPostId = () => {
+    // Try Gutenberg first
+    if (window.wp && window.wp.data && window.wp.data.select) {
+      try {
+        const postId = window.wp.data.select('core/editor')?.getCurrentPostId();
+        if (postId) return postId;
+      } catch (e) {
+        // Not in Gutenberg editor
+      }
+    }
+
+    // Try Classic Editor from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const postParam = urlParams.get('post');
+    if (postParam) return parseInt(postParam, 10);
+
+    // Try global pagenow
+    if (window.pagenow === 'post' && window.typenow) {
+      const postId = urlParams.get('post');
+      if (postId) return parseInt(postId, 10);
+    }
+
+    return 0;
+  };
 
   // Load asset groups on mount
   useEffect(() => {
@@ -53,6 +129,28 @@ const MediaPicker = ({ editorId }) => {
       loadAssets();
     }
   }, [currentContainer, searchQuery, sortBy, showAll, currentPage]);
+
+  // Handle Escape key to close modal
+  useEffect(() => {
+    const handleEscapeKey = (event) => {
+      if (event.key === 'Escape' && isOpen) {
+        // If asset detail is open, close that first
+        if (selectedAsset) {
+          setSelectedAsset(null);
+        } else {
+          // Otherwise close the main picker
+          handleClose();
+        }
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('keydown', handleEscapeKey);
+      return () => {
+        document.removeEventListener('keydown', handleEscapeKey);
+      };
+    }
+  }, [isOpen, selectedAsset]);
 
   /**
    * Load asset groups (Collections, Folders, Lightboxes)
@@ -154,27 +252,48 @@ const MediaPicker = ({ editorId }) => {
    */
   const handleAssetInsert = async (asset, metadata, displaySettings) => {
     try {
-      // Get download URL
-      const response = await fetch(ajaxUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: new URLSearchParams({
-          action: 'mediagraph_get_download_url',
-          nonce: nonce,
-          asset_id: asset.id,
-          size: displaySettings.size || 'original',
-        }),
-      });
+      // Get current post ID
+      const postId = getCurrentPostId();
 
-      const data = await response.json();
+      // Check if we're editing and size hasn't changed
+      const isEditing = window.mediagraphCurrentBlock?.editingAssetId === asset.id;
+      const previousSize = window.mediagraphCurrentBlock?.editingDisplaySettings?.size;
+      const sizeChanged = !isEditing || previousSize !== displaySettings.size;
 
-      if (!data.success) {
-        throw new Error(data.data?.message || 'Failed to get download URL');
+      let downloadUrl;
+      let attachmentId;
+
+      // Only re-download if size changed or it's a new asset
+      if (sizeChanged) {
+        // Download asset to WordPress media library
+        const response = await fetch(ajaxUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: new URLSearchParams({
+            action: 'mediagraph_download_asset',
+            nonce: nonce,
+            asset_id: asset.id,
+            size: displaySettings.size || 'original',
+            post_id: postId.toString(),
+            metadata: JSON.stringify(metadata),
+          }),
+        });
+
+        const data = await response.json();
+
+        if (!data.success) {
+          throw new Error(data.data?.message || 'Failed to download asset');
+        }
+
+        downloadUrl = data.data.url;
+        attachmentId = data.data.attachment_id;
+      } else {
+        // Reuse existing URL if size hasn't changed
+        downloadUrl = window.mediagraphCurrentBlock.assetUrl || asset.url;
+        attachmentId = null; // We don't have the attachment ID, but it's not needed for updates
       }
-
-      const downloadUrl = data.data.url;
 
       // Build media HTML (image or video)
       const mediaHtml = buildMediaHtml(asset, downloadUrl, metadata, displaySettings);
@@ -186,7 +305,23 @@ const MediaPicker = ({ editorId }) => {
           assetId: asset.id,
           assetUrl: downloadUrl,
           assetTitle: metadata.title || asset.title,
-          assetHtml: mediaHtml
+          assetHtml: mediaHtml,
+          // Save metadata fields individually
+          title: metadata.title || '',
+          byline: metadata.byline || '',
+          headline: metadata.headline || '',
+          description: metadata.description || '',
+          altText: metadata.alt_text || '',
+          extendedDescription: metadata.extended_description || '',
+          keywords: metadata.keywords || '',
+          usageRights: metadata.usage_rights || '',
+          // Save display settings individually
+          alignment: displaySettings.alignment || 'none',
+          linkTo: displaySettings.linkTo || 'none',
+          size: displaySettings.size || 'medium',
+          // Keep legacy objects for backwards compatibility
+          metadata: metadata,
+          displaySettings: displaySettings
         });
         // Clear the block reference
         window.mediagraphCurrentBlock = null;
@@ -210,6 +345,7 @@ const MediaPicker = ({ editorId }) => {
       setIsOpen(false);
     } catch (err) {
       setError('Failed to insert asset: ' + err.message);
+      throw err; // Re-throw so AssetDetail can handle the loading state
     }
   };
 
@@ -301,6 +437,7 @@ const MediaPicker = ({ editorId }) => {
    */
   const handleClose = () => {
     setIsOpen(false);
+    setSelectedAsset(null);
   };
 
   // Don't render if not connected
@@ -316,67 +453,67 @@ const MediaPicker = ({ editorId }) => {
   return (
     <div id="mediagraph-picker-modal" className="active">
       <div className="mediagraph-picker-content">
-        {/* Header */}
-        <div className="mediagraph-picker-header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <svg width="32" height="32" viewBox="0 0 486.45 486.45" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="243.22" cy="243.22" r="243.22" fill="#000"/>
-              <g fill="#fff">
-                <path d="M405.87,322.82l-59.34-173.19c-2.99-8.72-11.19-14.59-20.42-14.59h-38.43c-2.7-5.68-8.47-9.61-15.18-9.61-9.29,0-16.82,7.53-16.82,16.82s7.53,16.82,16.82,16.82c6.71,0,12.48-3.93,15.18-9.61h38.43c3.06,0,5.79,1.95,6.78,4.84l59.34,173.19c.76,2.22,.41,4.58-.95,6.49s-3.49,3-5.83,3h-33.5c-3.06,0-5.79-1.95-6.78-4.84l-36.01-105.1c3.13-3.05,5.08-7.31,5.08-12.03,0-9.29-7.53-16.82-16.82-16.82s-16.82,7.53-16.82,16.82c0,8.65,6.53,15.77,14.93,16.71l36.01,105.1c2.99,8.72,11.19,14.59,20.42,14.59h33.5c6.95,0,13.52-3.38,17.56-9.04,4.04-5.66,5.11-12.96,2.86-19.54Z"/>
-                <path d="M144.73,159.07c6.71,0,12.48-3.93,15.18-9.61h38.43c3.06,0,5.79,1.95,6.78,4.84l26.34,76.89c-3.13,3.05-5.08,7.31-5.08,12.03,0,9.29,7.53,16.82,16.82,16.82s16.82-7.53,16.82-16.82c0-8.65-6.53-15.77-14.93-16.71l-26.34-76.88c-2.99-8.73-11.19-14.59-20.42-14.59h-38.43c-2.7-5.68-8.47-9.61-15.18-9.61-9.29,0-16.82,7.53-16.82,16.82s7.53,16.82,16.82,16.82Z"/>
-                <path d="M278.01,327.37c-6.71,0-12.48,3.93-15.18,9.61h-37.23c-3.9,0-7.38-2.48-8.64-6.17l-40.08-116.97c-3.3-9.62-12-15.84-22.16-15.84h0c-10.17,0-18.87,6.21-22.17,15.83l-37.44,109.08c-2.25,6.67-1.19,13.77,2.91,19.49,4.1,5.72,10.5,9,17.53,9h28.67c2.7,5.68,8.47,9.61,15.18,9.61,9.29,0,16.82-7.53,16.82-16.82s-7.53-16.82-16.82-16.82c-6.71,0-12.48,3.93-15.18,9.61h-28.67c-2.34,0-4.46-1.09-5.82-2.99-1.36-1.9-1.71-4.26-.98-6.44l37.43-109.05c1.94-5.65,7.02-6.09,8.53-6.09h0c1.51,0,6.59,.44,8.53,6.1l40.08,116.97c3.26,9.52,12.22,15.92,22.28,15.92h37.23c2.7,5.68,8.47,9.61,15.18,9.61,9.29,0,16.82-7.53,16.82-16.82s-7.53-16.82-16.82-16.82Z"/>
-              </g>
-            </svg>
-            <h2 style={{ margin: 0 }}>Mediagraph Picker</h2>
+          {/* Header */}
+          <div className="mediagraph-picker-header">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <svg width="32" height="32" viewBox="0 0 486.45 486.45" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="243.22" cy="243.22" r="243.22" fill="#000"/>
+                <g fill="#fff">
+                  <path d="M405.87,322.82l-59.34-173.19c-2.99-8.72-11.19-14.59-20.42-14.59h-38.43c-2.7-5.68-8.47-9.61-15.18-9.61-9.29,0-16.82,7.53-16.82,16.82s7.53,16.82,16.82,16.82c6.71,0,12.48-3.93,15.18-9.61h38.43c3.06,0,5.79,1.95,6.78,4.84l59.34,173.19c.76,2.22,.41,4.58-.95,6.49s-3.49,3-5.83,3h-33.5c-3.06,0-5.79-1.95-6.78-4.84l-36.01-105.1c3.13-3.05,5.08-7.31,5.08-12.03,0-9.29-7.53-16.82-16.82-16.82s-16.82,7.53-16.82,16.82c0,8.65,6.53,15.77,14.93,16.71l36.01,105.1c2.99,8.72,11.19,14.59,20.42,14.59h33.5c6.95,0,13.52-3.38,17.56-9.04,4.04-5.66,5.11-12.96,2.86-19.54Z"/>
+                  <path d="M144.73,159.07c6.71,0,12.48-3.93,15.18-9.61h38.43c3.06,0,5.79,1.95,6.78,4.84l26.34,76.89c-3.13,3.05-5.08,7.31-5.08,12.03,0,9.29,7.53,16.82,16.82,16.82s16.82-7.53,16.82-16.82c0-8.65-6.53-15.77-14.93-16.71l-26.34-76.88c-2.99-8.73-11.19-14.59-20.42-14.59h-38.43c-2.7-5.68-8.47-9.61-15.18-9.61-9.29,0-16.82,7.53-16.82,16.82s7.53,16.82,16.82,16.82Z"/>
+                  <path d="M278.01,327.37c-6.71,0-12.48,3.93-15.18,9.61h-37.23c-3.9,0-7.38-2.48-8.64-6.17l-40.08-116.97c-3.3-9.62-12-15.84-22.16-15.84h0c-10.17,0-18.87,6.21-22.17,15.83l-37.44,109.08c-2.25,6.67-1.19,13.77,2.91,19.49,4.1,5.72,10.5,9,17.53,9h28.67c2.7,5.68,8.47,9.61,15.18,9.61,9.29,0,16.82-7.53,16.82-16.82s-7.53-16.82-16.82-16.82c-6.71,0-12.48,3.93-15.18,9.61h-28.67c-2.34,0-4.46-1.09-5.82-2.99-1.36-1.9-1.71-4.26-.98-6.44l37.43-109.05c1.94-5.65,7.02-6.09,8.53-6.09h0c1.51,0,6.59,.44,8.53,6.1l40.08,116.97c3.26,9.52,12.22,15.92,22.28,15.92h37.23c2.7,5.68,8.47,9.61,15.18,9.61,9.29,0,16.82-7.53,16.82-16.82s-7.53-16.82-16.82-16.82Z"/>
+                </g>
+              </svg>
+              <h2 style={{ margin: 0 }}>Mediagraph Picker</h2>
+            </div>
+            <button
+              className="mediagraph-picker-close"
+              onClick={handleClose}
+              aria-label="Close"
+            >
+              ×
+            </button>
           </div>
-          <button
-            className="mediagraph-picker-close"
-            onClick={handleClose}
-            aria-label="Close"
-          >
-            ×
-          </button>
-        </div>
 
-        {/* Search Bar */}
-        <SearchBar
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          sortBy={sortBy}
-          onSortChange={setSortBy}
-          showAll={showAll}
-          onShowAllChange={setShowAll}
-          sidebarCollapsed={sidebarCollapsed}
-          onToggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)}
-          currentContainer={currentContainer}
-          totalAssets={totalAssets}
-          visibleAssets={assets.length}
-        />
-
-        {/* Main Content */}
-        <div className="mediagraph-picker-body">
-          {/* Sidebar - Container Tree */}
-          {!sidebarCollapsed && (
-            <ContainerTree
-              assetGroups={assetGroups}
-              currentContainer={currentContainer}
-              onContainerSelect={handleContainerSelect}
-              ajaxUrl={ajaxUrl}
-              nonce={nonce}
-            />
-          )}
-
-          {/* Asset Grid */}
-          <AssetGrid
-            assets={assets}
-            isLoading={isLoadingAssets}
-            error={error}
-            onAssetSelect={handleAssetSelect}
-            currentPage={currentPage}
-            totalPages={Math.ceil(totalAssets / perPage)}
-            onPageChange={setCurrentPage}
+          {/* Search Bar */}
+          <SearchBar
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            sortBy={sortBy}
+            onSortChange={setSortBy}
+            showAll={showAll}
+            onShowAllChange={setShowAll}
+            sidebarCollapsed={sidebarCollapsed}
+            onToggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)}
+            currentContainer={currentContainer}
+            totalAssets={totalAssets}
+            visibleAssets={assets.length}
           />
-        </div>
+
+          {/* Main Content */}
+          <div className="mediagraph-picker-body">
+            {/* Sidebar - Container Tree */}
+            {!sidebarCollapsed && (
+              <ContainerTree
+                assetGroups={assetGroups}
+                currentContainer={currentContainer}
+                onContainerSelect={handleContainerSelect}
+                ajaxUrl={ajaxUrl}
+                nonce={nonce}
+              />
+            )}
+
+            {/* Asset Grid */}
+            <AssetGrid
+              assets={assets}
+              isLoading={isLoadingAssets}
+              error={error}
+              onAssetSelect={handleAssetSelect}
+              currentPage={currentPage}
+              totalPages={Math.ceil(totalAssets / perPage)}
+              onPageChange={setCurrentPage}
+            />
+          </div>
 
         {/* Asset Detail Modal */}
         {selectedAsset && (

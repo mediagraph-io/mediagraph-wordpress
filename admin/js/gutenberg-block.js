@@ -1,8 +1,8 @@
 (function(wp) {
     const { registerBlockType } = wp.blocks;
-    const { Button } = wp.components;
-    const { useBlockProps } = wp.blockEditor;
-    const { createElement: el } = wp.element;
+    const { Button, ToolbarButton, ToolbarGroup, PanelBody, TextControl, TextareaControl, SelectControl } = wp.components;
+    const { useBlockProps, BlockControls, InspectorControls } = wp.blockEditor;
+    const { createElement: el, useEffect, useRef } = wp.element;
 
     registerBlockType('mediagraph/asset-picker', {
         apiVersion: 2,
@@ -23,7 +23,7 @@
         category: 'media',
         attributes: {
             assetId: {
-                type: 'number'
+                type: 'string'
             },
             assetUrl: {
                 type: 'string'
@@ -33,17 +33,75 @@
             },
             assetHtml: {
                 type: 'string'
+            },
+            // Metadata fields
+            title: {
+                type: 'string',
+                default: ''
+            },
+            byline: {
+                type: 'string',
+                default: ''
+            },
+            headline: {
+                type: 'string',
+                default: ''
+            },
+            description: {
+                type: 'string',
+                default: ''
+            },
+            altText: {
+                type: 'string',
+                default: ''
+            },
+            extendedDescription: {
+                type: 'string',
+                default: ''
+            },
+            keywords: {
+                type: 'string',
+                default: ''
+            },
+            usageRights: {
+                type: 'string',
+                default: ''
+            },
+            // Display settings
+            alignment: {
+                type: 'string',
+                default: 'none'
+            },
+            linkTo: {
+                type: 'string',
+                default: 'none'
+            },
+            size: {
+                type: 'string',
+                default: 'medium'
+            },
+            // Legacy - for backwards compatibility
+            metadata: {
+                type: 'object',
+                default: {}
+            },
+            displaySettings: {
+                type: 'object',
+                default: {}
             }
         },
         edit: function(props) {
             const { attributes, setAttributes } = props;
             const blockProps = useBlockProps();
+            const hasOpenedPicker = useRef(false);
 
             function openMediagraphPicker() {
-                // Store the current block's setAttributes function globally so the modal can use it
+                // Store the current block's setAttributes function globally
                 window.mediagraphCurrentBlock = {
                     setAttributes: setAttributes,
-                    clientId: props.clientId
+                    clientId: props.clientId,
+                    // Flag to indicate this is a Gutenberg block
+                    isGutenbergBlock: true
                 };
 
                 // Trigger the existing Mediagraph modal
@@ -58,17 +116,178 @@
                 }
             }
 
+            // Rebuild HTML when metadata or display settings change
+            function rebuildAssetHtml() {
+                if (!attributes.assetUrl) return;
+
+                const metadata = {
+                    title: attributes.title,
+                    byline: attributes.byline,
+                    headline: attributes.headline,
+                    description: attributes.description,
+                    alt_text: attributes.altText,
+                    extended_description: attributes.extendedDescription,
+                    keywords: attributes.keywords,
+                    usage_rights: attributes.usageRights
+                };
+
+                const displaySettings = {
+                    alignment: attributes.alignment,
+                    linkTo: attributes.linkTo,
+                    size: attributes.size
+                };
+
+                // Call the global HTML builder if available
+                if (window.mediagraphBuildHtml) {
+                    const newHtml = window.mediagraphBuildHtml(attributes.assetUrl, metadata, displaySettings);
+                    setAttributes({ assetHtml: newHtml });
+                }
+            }
+
+            // Automatically open picker when block is first inserted
+            useEffect(() => {
+                if (!attributes.assetHtml && !hasOpenedPicker.current) {
+                    hasOpenedPicker.current = true;
+                    // Small delay to ensure the block is fully mounted
+                    setTimeout(() => {
+                        openMediagraphPicker();
+                    }, 100);
+                }
+            }, []);
+
             // If we have an asset, show it
             if (attributes.assetHtml) {
                 return el('div', blockProps,
+                    // Add toolbar controls
+                    el(BlockControls, {},
+                        el(ToolbarGroup, {},
+                            el(ToolbarButton, {
+                                icon: 'format-image',
+                                label: 'Replace Asset',
+                                onClick: openMediagraphPicker
+                            })
+                        )
+                    ),
+                    // Add sidebar inspector controls
+                    el(InspectorControls, {},
+                        // Metadata Panel
+                        el(PanelBody, { title: 'Asset Metadata', initialOpen: true },
+                            el(TextControl, {
+                                label: 'Title',
+                                value: attributes.title,
+                                onChange: (value) => {
+                                    setAttributes({ title: value });
+                                    setTimeout(rebuildAssetHtml, 0);
+                                }
+                            }),
+                            el(TextControl, {
+                                label: 'Byline',
+                                value: attributes.byline,
+                                onChange: (value) => {
+                                    setAttributes({ byline: value });
+                                    setTimeout(rebuildAssetHtml, 0);
+                                }
+                            }),
+                            el(TextControl, {
+                                label: 'Headline',
+                                value: attributes.headline,
+                                onChange: (value) => {
+                                    setAttributes({ headline: value });
+                                    setTimeout(rebuildAssetHtml, 0);
+                                }
+                            }),
+                            el(TextareaControl, {
+                                label: 'Description',
+                                value: attributes.description,
+                                onChange: (value) => {
+                                    setAttributes({ description: value });
+                                    setTimeout(rebuildAssetHtml, 0);
+                                }
+                            }),
+                            el(TextControl, {
+                                label: 'Alt Text',
+                                value: attributes.altText,
+                                onChange: (value) => {
+                                    setAttributes({ altText: value });
+                                    setTimeout(rebuildAssetHtml, 0);
+                                }
+                            }),
+                            el(TextareaControl, {
+                                label: 'Extended Description',
+                                value: attributes.extendedDescription,
+                                onChange: (value) => {
+                                    setAttributes({ extendedDescription: value });
+                                    setTimeout(rebuildAssetHtml, 0);
+                                }
+                            }),
+                            el(TextControl, {
+                                label: 'Keywords',
+                                value: attributes.keywords,
+                                placeholder: 'Comma-separated',
+                                onChange: (value) => {
+                                    setAttributes({ keywords: value });
+                                    setTimeout(rebuildAssetHtml, 0);
+                                }
+                            }),
+                            el(TextareaControl, {
+                                label: 'Usage Rights',
+                                value: attributes.usageRights,
+                                onChange: (value) => {
+                                    setAttributes({ usageRights: value });
+                                    setTimeout(rebuildAssetHtml, 0);
+                                }
+                            })
+                        ),
+                        // Display Settings Panel
+                        el(PanelBody, { title: 'Display Settings', initialOpen: true },
+                            el(SelectControl, {
+                                label: 'Alignment',
+                                value: attributes.alignment,
+                                options: [
+                                    { label: 'None', value: 'none' },
+                                    { label: 'Left', value: 'left' },
+                                    { label: 'Center', value: 'center' },
+                                    { label: 'Right', value: 'right' }
+                                ],
+                                onChange: (value) => {
+                                    setAttributes({ alignment: value });
+                                    setTimeout(rebuildAssetHtml, 0);
+                                }
+                            }),
+                            el(SelectControl, {
+                                label: 'Link To',
+                                value: attributes.linkTo,
+                                options: [
+                                    { label: 'None', value: 'none' },
+                                    { label: 'Media File', value: 'media' },
+                                    { label: 'Attachment Page', value: 'attachment' }
+                                ],
+                                onChange: (value) => {
+                                    setAttributes({ linkTo: value });
+                                    setTimeout(rebuildAssetHtml, 0);
+                                }
+                            }),
+                            el(SelectControl, {
+                                label: 'Size',
+                                value: attributes.size,
+                                options: [
+                                    { label: 'Thumbnail', value: 'thumbnail' },
+                                    { label: 'Medium', value: 'medium' },
+                                    { label: 'Large', value: 'large' },
+                                    { label: 'Full Size', value: 'full' }
+                                ],
+                                onChange: (value) => {
+                                    setAttributes({ size: value });
+                                    // Size change requires re-download
+                                    // TODO: Implement re-download logic
+                                }
+                            })
+                        )
+                    ),
+                    // Show the asset
                     el('div', {
                         dangerouslySetInnerHTML: { __html: attributes.assetHtml }
-                    }),
-                    el(Button, {
-                        variant: 'secondary',
-                        onClick: openMediagraphPicker,
-                        style: { marginTop: '10px' }
-                    }, 'Change Mediagraph Asset')
+                    })
                 );
             }
 

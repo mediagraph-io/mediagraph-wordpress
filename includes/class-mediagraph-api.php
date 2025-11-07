@@ -469,9 +469,27 @@ class Mediagraph_API {
      *
      * @param string $asset_id Asset ID
      * @param array  $metadata Optional metadata
+     * @param int    $post_id  Optional post ID to associate attachment with
      * @return int|WP_Error Attachment ID or error
      */
-    public function download_to_media_library( $asset_id, $metadata = array() ) {
+    public function download_to_media_library( $asset_id, $metadata = array(), $post_id = 0 ) {
+        // Get asset details to get the proper filename
+        $asset = $this->get_asset( $asset_id );
+
+        if ( is_wp_error( $asset ) ) {
+            return $asset;
+        }
+
+        // Get filename from asset details
+        $filename = isset( $asset['filename'] ) ? $asset['filename'] : '';
+        if ( empty( $filename ) && isset( $metadata['filename'] ) ) {
+            $filename = $metadata['filename'];
+        }
+
+        if ( empty( $filename ) ) {
+            return new WP_Error( 'no_filename', __( 'Could not determine filename for asset', 'mediagraph-picker' ) );
+        }
+
         // Get download URL
         $download_url = $this->get_download_url( $asset_id );
 
@@ -486,14 +504,31 @@ class Mediagraph_API {
             return $temp_file;
         }
 
-        // Prepare file array for upload
+        // Get mime type from filename or asset
+        $mime_type = null;
+        if ( isset( $asset['mime_type'] ) ) {
+            $mime_type = $asset['mime_type'];
+        } else {
+            // Try to determine from file extension
+            $wp_filetype = wp_check_filetype( $filename );
+            if ( $wp_filetype['type'] ) {
+                $mime_type = $wp_filetype['type'];
+            }
+        }
+
+        // Prepare file array for upload with correct filename
         $file_array = array(
-            'name'     => isset( $metadata['filename'] ) ? $metadata['filename'] : basename( $download_url ),
+            'name'     => $filename,
             'tmp_name' => $temp_file,
+            'type'     => $mime_type,
         );
 
-        // Sideload into media library
-        $attachment_id = media_handle_sideload( $file_array, 0, null, array(
+        // Sideload into media library and associate with post
+        require_once( ABSPATH . 'wp-admin/includes/image.php' );
+        require_once( ABSPATH . 'wp-admin/includes/file.php' );
+        require_once( ABSPATH . 'wp-admin/includes/media.php' );
+
+        $attachment_id = media_handle_sideload( $file_array, $post_id, null, array(
             'post_title'   => isset( $metadata['title'] ) ? $metadata['title'] : '',
             'post_content' => isset( $metadata['description'] ) ? $metadata['description'] : '',
             'post_excerpt' => isset( $metadata['caption'] ) ? $metadata['caption'] : '',
@@ -509,16 +544,21 @@ class Mediagraph_API {
         }
 
         // Update attachment metadata
+        // Alt text
+        if ( ! empty( $metadata['alt_text'] ) ) {
+            update_post_meta( $attachment_id, '_wp_attachment_image_alt', $metadata['alt_text'] );
+        }
+
+        // Store Mediagraph asset ID
+        update_post_meta( $attachment_id, '_mediagraph_asset_id', $asset_id );
+
+        // Store Mediagraph GUID
+        if ( ! empty( $asset['guid'] ) ) {
+            update_post_meta( $attachment_id, '_mediagraph_guid', $asset['guid'] );
+        }
+
+        // Store additional metadata
         if ( ! empty( $metadata ) ) {
-            // Alt text
-            if ( ! empty( $metadata['alt_text'] ) ) {
-                update_post_meta( $attachment_id, '_wp_attachment_image_alt', $metadata['alt_text'] );
-            }
-
-            // Store Mediagraph asset ID
-            update_post_meta( $attachment_id, '_mediagraph_asset_id', $asset_id );
-
-            // Store additional metadata
             update_post_meta( $attachment_id, '_mediagraph_metadata', $metadata );
         }
 

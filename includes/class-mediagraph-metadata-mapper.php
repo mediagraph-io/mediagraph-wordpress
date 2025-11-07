@@ -156,6 +156,24 @@ abstract class Mediagraph_Metadata_Mapper {
     protected function build_published_image( $asset, $post, $usage_type = 'body_photo' ) {
         $article_uid = $this->generate_article_uid( $post );
 
+        // Extract article-specific metadata edited by user in WordPress
+        $metadata = isset( $asset['metadata'] ) ? $asset['metadata'] : array();
+
+        // Get article-specific fields (caption and alt_text go in main fields)
+        $caption = isset( $metadata['description'] ) ? $metadata['description'] :
+                   ( isset( $asset['caption'] ) ? $asset['caption'] : '' );
+        $alt_text = isset( $metadata['alt_text'] ) ? $metadata['alt_text'] :
+                    ( isset( $asset['alt_text'] ) ? $asset['alt_text'] : '' );
+
+        // Build metadata JSON for additional article-specific fields
+        $article_metadata = array();
+        if ( isset( $metadata['headline'] ) && ! empty( $metadata['headline'] ) ) {
+            $article_metadata['headline'] = $metadata['headline'];
+        }
+        if ( isset( $metadata['extended_description'] ) && ! empty( $metadata['extended_description'] ) ) {
+            $article_metadata['extended_description'] = $metadata['extended_description'];
+        }
+
         return array(
             'asset_guid'    => isset( $asset['guid'] ) ? $asset['guid'] : '',
             'published_in'  => $article_uid,
@@ -163,10 +181,12 @@ abstract class Mediagraph_Metadata_Mapper {
             'filename'      => isset( $asset['filename'] ) ? $asset['filename'] : '',
             'cdn_link'      => isset( $asset['cdn_url'] ) ? $asset['cdn_url'] : '',
             'usage_type'    => $usage_type,
-            'credit_line'   => isset( $asset['credit'] ) ? $asset['credit'] : '',
-            'caption'       => isset( $asset['caption'] ) ? $asset['caption'] : '',
-            'alt_text'      => isset( $asset['alt_text'] ) ? $asset['alt_text'] : '',
+            'credit_line'   => isset( $metadata['byline'] ) ? $metadata['byline'] :
+                               ( isset( $asset['credit'] ) ? $asset['credit'] : '' ),
+            'caption'       => $caption,
+            'alt_text'      => $alt_text,
             'restrictions'  => isset( $asset['restrictions'] ) ? $asset['restrictions'] : '',
+            'metadata'      => $article_metadata,
         );
     }
 
