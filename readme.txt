@@ -1,5 +1,5 @@
 === Mediagraph File Picker ===
-Version: 1.0.0
+Version: 1.1.0
 Requires at least: WordPress 5.8
 Requires PHP: 7.4
 License: GPLv2 or later
@@ -39,7 +39,15 @@ See INSTALLATION.md for detailed installation instructions, or:
 
 == Changelog ==
 
-= 1.0.0 - January 2025 =
+= 1.1.0 - November 2025 =
+* Fix bin (Lightbox sub-folder) filtering
+* Update sort terminology: "Date Taken" → "Creation Date" with asc/desc options
+* Fix container tree turndown alignment
+* Add distinct organizer icons per container type
+* Show paginated count format (e.g., "1-50 of 147 assets")
+* Add pagination spacing
+
+= 1.0.0 - October 2025 =
 * Initial release
 * OAuth 2.0 with PKCE authentication
 * Browse Collections, Storage Folders, Lightboxes

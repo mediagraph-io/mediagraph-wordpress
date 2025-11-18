@@ -10,20 +10,20 @@
 
 ### 1. Download the Plugin
 
-Download the latest version: `mediagraph-picker-v1.0.0.zip`
+Download the latest version: `mediagraph-picker-v1.1.0.zip`
 
 ### 2. Install via WordPress Admin (Recommended)
 
 1. Log into your WordPress admin panel
 2. Navigate to **Plugins > Add New**
 3. Click the **Upload Plugin** button at the top
-4. Click **Choose File** and select `mediagraph-picker-v1.0.0.zip`
+4. Click **Choose File** and select `mediagraph-picker-v1.1.0.zip`
 5. Click **Install Now**
 6. Click **Activate Plugin**
 
 ### 3. Alternative: Manual Installation via FTP
 
-1. Unzip `mediagraph-picker-v1.0.0.zip` on your computer
+1. Unzip `mediagraph-picker-v1.1.0.zip` on your computer
 2. Connect to your WordPress site via FTP
 3. Upload the `mediagraph-picker` folder to `/wp-content/plugins/`
 4. Go to **Plugins** in WordPress admin
@@ -162,7 +162,7 @@ Note: This will remove the OAuth connection but will not delete any media files 
 
 ## Version
 
-Current Version: 1.0.0
+Current Version: 1.1.0
 Last Updated: January 2025
 
 ---
