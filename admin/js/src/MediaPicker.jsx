@@ -77,7 +77,7 @@ const MediaPicker = ({ editorId }) => {
 
   // Search and filter state
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState('created_at');
+  const [sortBy, setSortBy] = useState('created_at_desc');
   const [showAll, setShowAll] = useState(false);
 
   // Selected asset for detail view
@@ -193,11 +193,17 @@ const MediaPicker = ({ editorId }) => {
     setError(null);
 
     try {
+      // Parse sort value to extract field and order (e.g., "created_at_desc" -> "created_at", "desc")
+      const sortParts = sortBy.match(/^(.+)_(asc|desc)$/);
+      const sortField = sortParts ? sortParts[1] : sortBy;
+      const sortOrder = sortParts ? sortParts[2] : 'desc';
+
       const params = {
         action: 'mediagraph_search_assets',
         nonce: nonce,
         q: searchQuery,
-        sort: sortBy,
+        sort: sortField,
+        order: sortOrder,
         show_all: showAll ? '1' : '0',
         page: currentPage.toString(),
         per_page: perPage.toString(),
@@ -207,6 +213,10 @@ const MediaPicker = ({ editorId }) => {
       if (currentContainer?.id) {
         params.asset_group_id = currentContainer.id;
         params.asset_group_type = currentContainer.type; // Collection, StorageFolder, or Lightbox
+        // For bins (Lightbox sub-folders), include sub_type
+        if (currentContainer.sub_type) {
+          params.asset_group_sub_type = currentContainer.sub_type;
+        }
       }
 
       const response = await fetch(ajaxUrl, {
@@ -494,7 +504,8 @@ const MediaPicker = ({ editorId }) => {
             onToggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)}
             currentContainer={currentContainer}
             totalAssets={totalAssets}
-            visibleAssets={assets.length}
+            currentPage={currentPage}
+            perPage={perPage}
           />
 
           {/* Main Content */}

@@ -270,12 +270,14 @@ class Mediagraph_API {
      */
     public function search_assets( $params = array() ) {
         $default_params = array(
-            'q'              => '',
-            'asset_group_id' => null,
-            'asset_group_type' => null, // 'Collection', 'StorageFolder', or 'Lightbox'
-            'sort'           => 'created_at',
-            'page'           => 1,
-            'per_page'       => 50,
+            'q'                    => '',
+            'asset_group_id'       => null,
+            'asset_group_type'     => null, // 'Collection', 'StorageFolder', or 'Lightbox'
+            'asset_group_sub_type' => null, // 'folder' for bins (Lightbox sub-folders)
+            'sort'                 => 'created_at',
+            'order'                => null,
+            'page'                 => 1,
+            'per_page'             => 50,
         );
 
         $params = wp_parse_args( $params, $default_params );
@@ -294,6 +296,7 @@ class Mediagraph_API {
         // Add asset group filter with correct parameter name based on type
         if ( ! empty( $params['asset_group_id'] ) && ! empty( $params['asset_group_type'] ) ) {
             $type = $params['asset_group_type'];
+            $sub_type = isset( $params['asset_group_sub_type'] ) ? $params['asset_group_sub_type'] : null;
 
             // Map to correct Rails parameter name
             if ( $type === 'Collection' ) {
@@ -301,16 +304,25 @@ class Mediagraph_API {
             } elseif ( $type === 'StorageFolder' ) {
                 $query_params['storage_folder_id'] = $params['asset_group_id'];
             } elseif ( $type === 'Lightbox' ) {
-                $query_params['lightbox_id'] = $params['asset_group_id'];
+                // Bins (Lightbox sub-folders) use lightbox_folder_id
+                if ( $sub_type === 'folder' ) {
+                    $query_params['lightbox_folder_id'] = $params['asset_group_id'];
+                } else {
+                    $query_params['lightbox_id'] = $params['asset_group_id'];
+                }
             }
         }
 
         // Add sort parameter
         if ( ! empty( $params['sort'] ) ) {
             $query_params['sort'] = $params['sort'];
-            // Filename should sort ascending (A-Z), others descending (newest first)
-            $default_order = ( $params['sort'] === 'filename' ) ? 'asc' : 'desc';
-            $query_params['order'] = isset( $params['order'] ) ? $params['order'] : $default_order;
+            // Use provided order, or default based on sort field
+            if ( ! empty( $params['order'] ) ) {
+                $query_params['order'] = $params['order'];
+            } else {
+                // Filename should sort ascending (A-Z), others descending (newest first)
+                $query_params['order'] = ( $params['sort'] === 'filename' ) ? 'asc' : 'desc';
+            }
         }
 
         // Show all files or only downloadable

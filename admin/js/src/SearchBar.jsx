@@ -15,7 +15,8 @@ const SearchBar = ({
   onToggleSidebar,
   currentContainer,
   totalAssets,
-  visibleAssets,
+  currentPage,
+  perPage,
 }) => {
   const [localQuery, setLocalQuery] = useState(searchQuery);
 
@@ -71,7 +72,15 @@ const SearchBar = ({
 
       {/* File Counter */}
       <div className="mediagraph-file-counter">
-        Showing {visibleAssets} of {totalAssets} assets
+        {totalAssets > perPage ? (
+          <>
+            {((currentPage - 1) * perPage) + 1}-{Math.min(currentPage * perPage, totalAssets)} of {totalAssets} assets
+          </>
+        ) : (
+          <>
+            {totalAssets} {totalAssets === 1 ? 'asset' : 'assets'}
+          </>
+        )}
       </div>
 
       {/* Search Input */}
@@ -92,9 +101,12 @@ const SearchBar = ({
           onChange={(e) => onSortChange(e.target.value)}
           aria-label="Sort by"
         >
-          <option value="created_at">Date Uploaded</option>
-          <option value="captured_at">Date Taken</option>
-          <option value="filename">Filename</option>
+          <option value="created_at_desc">Date Uploaded (Newest)</option>
+          <option value="created_at_asc">Date Uploaded (Oldest)</option>
+          <option value="captured_at_desc">Creation Date (Newest)</option>
+          <option value="captured_at_asc">Creation Date (Oldest)</option>
+          <option value="filename_asc">Filename (A-Z)</option>
+          <option value="filename_desc">Filename (Z-A)</option>
         </select>
       </div>
 

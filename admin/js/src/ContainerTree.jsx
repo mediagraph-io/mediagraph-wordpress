@@ -126,7 +126,7 @@ const ContainerTree = ({ assetGroups, currentContainer, onContainerSelect, ajaxU
 
     return (
       <li key={node.id} className="mediagraph-container-item">
-        {hasChildren && (
+        {hasChildren ? (
           <button
             className="mediagraph-container-toggle"
             onClick={() => toggleNode(node)}
@@ -135,15 +135,16 @@ const ContainerTree = ({ assetGroups, currentContainer, onContainerSelect, ajaxU
           >
             {isLoading ? '⏳' : (isExpanded ? '▼' : '▶')}
           </button>
+        ) : (
+          <span className="mediagraph-container-toggle" />
         )}
 
         <button
           className={`mediagraph-container-button ${isActive ? 'active' : ''}`}
           onClick={() => onContainerSelect(node)}
-          style={{ paddingLeft: `${hasChildren ? 32 : 16 + depth * 16}px` }}
         >
           <span className="mediagraph-container-icon">
-            {getContainerIcon(node.type)}
+            {getContainerIcon(node.type, node.organizer)}
           </span>
           <span className="mediagraph-container-name">
             {node.name}
@@ -172,15 +173,20 @@ const ContainerTree = ({ assetGroups, currentContainer, onContainerSelect, ajaxU
 
   /**
    * Get icon for container type
+   * @param {string} type - Container type (Collection, StorageFolder, Lightbox)
+   * @param {boolean} isOrganizer - Whether this is an organizer container
    */
-  const getContainerIcon = (type) => {
+  const getContainerIcon = (type, isOrganizer = false) => {
     switch (type) {
       case 'Collection':
-        return '📁';
+        // Organizer collections use file cabinet icon
+        return isOrganizer ? '🗄️' : '📁';
       case 'StorageFolder':
-        return '🗂️';
+        // Organizer storage folders use card file box
+        return isOrganizer ? '🗃️' : '🗂️';
       case 'Lightbox':
-        return '💡';
+        // Organizer lightboxes use clipboard
+        return isOrganizer ? '📋' : '💡';
       default:
         return '📄';
     }

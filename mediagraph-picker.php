@@ -371,13 +371,15 @@ class Mediagraph_Picker {
         check_ajax_referer( 'mediagraph_picker_nonce', 'nonce' );
 
         $params = array(
-            'q'                 => isset( $_POST['q'] ) ? sanitize_text_field( wp_unslash( $_POST['q'] ) ) : '',
-            'asset_group_id'    => isset( $_POST['asset_group_id'] ) ? intval( $_POST['asset_group_id'] ) : null,
-            'asset_group_type'  => isset( $_POST['asset_group_type'] ) ? sanitize_text_field( wp_unslash( $_POST['asset_group_type'] ) ) : null,
-            'sort'              => isset( $_POST['sort'] ) ? sanitize_text_field( wp_unslash( $_POST['sort'] ) ) : 'created_at',
-            'show_all'          => isset( $_POST['show_all'] ) ? filter_var( wp_unslash( $_POST['show_all'] ), FILTER_VALIDATE_BOOLEAN ) : false,
-            'page'              => isset( $_POST['page'] ) ? intval( $_POST['page'] ) : 1,
-            'per_page'          => isset( $_POST['per_page'] ) ? intval( $_POST['per_page'] ) : 50,
+            'q'                    => isset( $_POST['q'] ) ? sanitize_text_field( wp_unslash( $_POST['q'] ) ) : '',
+            'asset_group_id'       => isset( $_POST['asset_group_id'] ) ? intval( $_POST['asset_group_id'] ) : null,
+            'asset_group_type'     => isset( $_POST['asset_group_type'] ) ? sanitize_text_field( wp_unslash( $_POST['asset_group_type'] ) ) : null,
+            'asset_group_sub_type' => isset( $_POST['asset_group_sub_type'] ) ? sanitize_text_field( wp_unslash( $_POST['asset_group_sub_type'] ) ) : null,
+            'sort'                 => isset( $_POST['sort'] ) ? sanitize_text_field( wp_unslash( $_POST['sort'] ) ) : 'created_at',
+            'order'                => isset( $_POST['order'] ) ? sanitize_text_field( wp_unslash( $_POST['order'] ) ) : null,
+            'show_all'             => isset( $_POST['show_all'] ) ? filter_var( wp_unslash( $_POST['show_all'] ), FILTER_VALIDATE_BOOLEAN ) : false,
+            'page'                 => isset( $_POST['page'] ) ? intval( $_POST['page'] ) : 1,
+            'per_page'             => isset( $_POST['per_page'] ) ? intval( $_POST['per_page'] ) : 50,
         );
 
         $result = $this->api->search_assets( $params );

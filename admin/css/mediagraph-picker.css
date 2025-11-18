@@ -185,12 +185,15 @@
 
 .mediagraph-container-item {
   position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
 }
 
 .mediagraph-container-button {
-  width: 100%;
+  flex: 1;
   text-align: left;
-  padding: 8px 16px 8px 32px;
+  padding: 8px 16px 8px 8px;
   border: none;
   background: none;
   cursor: pointer;
@@ -211,21 +214,29 @@
 }
 
 .mediagraph-container-toggle {
-  position: absolute;
-  left: 8px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 32px;
   border: none;
   background: none;
   cursor: pointer;
   padding: 0;
-  font-size: 16px;
+  font-size: 12px;
+  color: #666;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.mediagraph-container-toggle:hover {
+  color: #333;
 }
 
 .mediagraph-container-children {
+  width: 100%;
   padding-left: 16px;
+  list-style: none;
+  margin: 0;
 }
 
 /* Asset Grid */
@@ -325,6 +336,22 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* Pagination */
+.mediagraph-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid #eee;
+}
+
+.mediagraph-pagination-ellipsis {
+  padding: 0 4px;
+  color: #666;
 }
 
 /* Asset Detail Modal */
