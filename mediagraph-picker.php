@@ -1,11 +1,11 @@
 <?php
 /**
  * Plugin Name: Mediagraph File Picker
- * Plugin URI: https://mediagraph.io/wordpress-plugin
+ * Plugin URI: https://www.mediagraph.io/wordpress-plugin
  * Description: Integrates Mediagraph's media asset management system into WordPress media library. Browse, search, and insert assets from Mediagraph Collections, Storage Folders, and Lightboxes.
  * Version: 1.1.0
  * Author: Mediagraph
- * Author URI: https://mediagraph.io
+ * Author URI: https://www.mediagraph.io
  * License: GPL-2.0+
  * License URI: http://www.gnu.org/licenses/gpl-2.0.txt
  * Text Domain: mediagraph-picker

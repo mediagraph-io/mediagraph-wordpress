@@ -11,10 +11,24 @@ import AssetDetail from './AssetDetail';
 import SearchBar from './SearchBar';
 
 /**
+ * Resolve a URL to a full URL using the API base URL if it's a relative path
+ */
+const resolveUrl = (url) => {
+  if (!url) return null;
+  // If it's already a full URL, return as-is
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url;
+  }
+  // Prepend the API base URL for relative paths
+  const apiBaseUrl = window.mediagraphPicker?.apiBaseUrl || '';
+  return apiBaseUrl ? `${apiBaseUrl.replace(/\/$/, '')}${url}` : url;
+};
+
+/**
  * Static HTML builder for Gutenberg blocks to use
  * This is exposed globally so blocks can rebuild HTML when settings change
  */
-window.mediagraphBuildHtml = function(url, metadata, displaySettings, assetType = null) {
+window.mediagraphBuildHtml = function(url, metadata, displaySettings, assetType = null, posterUrl = null) {
   const { alignment, linkTo } = displaySettings;
   const isVideo = assetType === 'video' || (url && url.match(/\.(mp4|mov|avi|webm)$/i));
   const isAudio = assetType === 'audio' || (url && url.match(/\.(mp3|wav|ogg)$/i));
@@ -23,6 +37,9 @@ window.mediagraphBuildHtml = function(url, metadata, displaySettings, assetType 
 
   if (isVideo) {
     html = `<video src="${url}" controls`;
+    if (posterUrl) {
+      html += ` poster="${posterUrl}"`;
+    }
     if (alignment && alignment !== 'none') {
       html += ` class="align${alignment}"`;
     }
@@ -308,14 +325,22 @@ const MediaPicker = ({ editorId }) => {
       // Build media HTML (image or video)
       const mediaHtml = buildMediaHtml(asset, downloadUrl, metadata, displaySettings);
 
+      // Determine asset type for Gutenberg block
+      const isVideo = asset.type === 'Video' || asset.mime_type?.startsWith('video/');
+      const isAudio = asset.type === 'Audio' || asset.mime_type?.startsWith('audio/');
+      const assetType = isVideo ? 'video' : isAudio ? 'audio' : 'image';
+
       // Check if this was opened from a Gutenberg block
       if (window.mediagraphCurrentBlock && window.mediagraphCurrentBlock.setAttributes) {
         // Update Gutenberg block attributes
         window.mediagraphCurrentBlock.setAttributes({
           assetId: asset.id,
+          assetGuid: asset.guid || '',
           assetUrl: downloadUrl,
-          assetTitle: metadata.title || asset.title,
+          assetTitle: metadata.title || asset.title || asset.filename,
           assetHtml: mediaHtml,
+          assetType: assetType,
+          posterUrl: resolveUrl(asset.preview_image_url) || '',
           // Save metadata fields individually
           title: metadata.title || '',
           byline: metadata.byline || '',
@@ -373,8 +398,9 @@ const MediaPicker = ({ editorId }) => {
       // Build video element
       html = `<video src="${url}" controls`;
 
-      if (asset.preview_image_url) {
-        html += ` poster="${asset.preview_image_url}"`;
+      const posterUrl = resolveUrl(asset.preview_image_url);
+      if (posterUrl) {
+        html += ` poster="${posterUrl}"`;
       }
 
       if (alignment && alignment !== 'none') {

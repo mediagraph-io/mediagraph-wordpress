@@ -86,16 +86,68 @@ class Mediagraph_WordPress_Mapper extends Mediagraph_Metadata_Mapper {
     protected function get_article_properties( $post ) {
         $article = parent::get_article_properties( $post );
 
-        // Add WordPress-specific fields
-        $article['comments'] = $this->get_comments_data( $post );
-        $article['inbound_links'] = $this->get_inbound_links( $post );
-        $article['categories'] = $this->get_categories( $post );
-        $article['tags'] = $this->get_tags( $post );
+        // Get WordPress-specific data
+        $categories = $this->get_categories( $post );
+        $tags = $this->get_tags( $post );
 
-        // Add custom fields if they exist
-        $article = $this->add_custom_fields( $article, $post );
+        // Add WordPress-specific fields to article metadata (JSON field)
+        // These go in metadata since they're not standard published_asset columns
+        $article_metadata = isset( $article['metadata'] ) ? $article['metadata'] : array();
+
+        // Add categories to metadata
+        if ( ! empty( $categories ) ) {
+            $article_metadata['categories'] = $categories;
+        }
+
+        // Add tags to metadata
+        if ( ! empty( $tags ) ) {
+            $article_metadata['tags'] = $tags;
+        }
+
+        // Add comments info to metadata
+        $comments = $this->get_comments_data( $post );
+        if ( ! empty( $comments ) ) {
+            $article_metadata['comments'] = $comments;
+        }
+
+        // Add inbound links to metadata
+        $inbound_links = $this->get_inbound_links( $post );
+        if ( ! empty( $inbound_links ) ) {
+            $article_metadata['inbound_links'] = $inbound_links;
+        }
+
+        // Add custom fields to metadata if they exist
+        $article_metadata = $this->add_custom_fields_to_metadata( $article_metadata, $post );
+
+        $article['metadata'] = $article_metadata;
 
         return $article;
+    }
+
+    /**
+     * Add custom fields to metadata array
+     *
+     * @param array   $metadata Metadata array
+     * @param WP_Post $post     Post object
+     * @return array Updated metadata
+     */
+    private function add_custom_fields_to_metadata( $metadata, $post ) {
+        // Look for common SEO and editorial meta fields
+        $meta_fields = array(
+            'meta_description'   => '_yoast_wpseo_metadesc', // Yoast SEO
+            'focus_keyword'      => '_yoast_wpseo_focuskw',
+            'social_title'       => '_yoast_wpseo_opengraph-title',
+            'social_description' => '_yoast_wpseo_opengraph-description',
+        );
+
+        foreach ( $meta_fields as $key => $meta_key ) {
+            $value = get_post_meta( $post->ID, $meta_key, true );
+            if ( ! empty( $value ) ) {
+                $metadata[ $key ] = $value;
+            }
+        }
+
+        return $metadata;
     }
 
     /**
@@ -172,32 +224,6 @@ class Mediagraph_WordPress_Mapper extends Mediagraph_Metadata_Mapper {
         }
 
         return $tag_names;
-    }
-
-    /**
-     * Add custom fields from post meta
-     *
-     * @param array   $article Article data
-     * @param WP_Post $post    Post object
-     * @return array Updated article data
-     */
-    private function add_custom_fields( $article, $post ) {
-        // Look for common SEO and editorial meta fields
-        $meta_fields = array(
-            'meta_description'  => '_yoast_wpseo_metadesc', // Yoast SEO
-            'focus_keyword'     => '_yoast_wpseo_focuskw',
-            'social_title'      => '_yoast_wpseo_opengraph-title',
-            'social_description' => '_yoast_wpseo_opengraph-description',
-        );
-
-        foreach ( $meta_fields as $key => $meta_key ) {
-            $value = get_post_meta( $post->ID, $meta_key, true );
-            if ( ! empty( $value ) ) {
-                $article[ $key ] = $value;
-            }
-        }
-
-        return $article;
     }
 
     /**

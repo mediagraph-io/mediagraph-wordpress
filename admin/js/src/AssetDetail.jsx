@@ -4,6 +4,20 @@
 
 import { useState, useEffect } from 'react';
 
+/**
+ * Resolve a URL to a full URL using the API base URL if it's a relative path
+ */
+const resolveUrl = (url) => {
+  if (!url) return null;
+  // If it's already a full URL, return as-is
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url;
+  }
+  // Prepend the API base URL for relative paths
+  const apiBaseUrl = window.mediagraphPicker?.apiBaseUrl || '';
+  return apiBaseUrl ? `${apiBaseUrl.replace(/\/$/, '')}${url}` : url;
+};
+
 const AssetDetail = ({ asset, onClose, onInsert, ajaxUrl, nonce }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isInserting, setIsInserting] = useState(false);
@@ -93,7 +107,7 @@ const AssetDetail = ({ asset, onClose, onInsert, ajaxUrl, nonce }) => {
           alt_text: data.data.alt_text || '',
           extended_description: data.data.extended_description || data.data.description || '',
           keywords: keywordsString,
-          usage_rights: data.data.usage_terms || data.data.iptc_rights || '',
+          usage_rights: data.data.usage_terms || data.data.rights_package?.meta_field_text || data.data.iptc_rights || '',
         });
       } else {
         setError(data.data?.message || 'Failed to load asset details');
@@ -213,9 +227,10 @@ const AssetDetail = ({ asset, onClose, onInsert, ajaxUrl, nonce }) => {
   const isRestricted = data.downloadable === false;
 
   // Rails API returns: thumb_url, grid_url, small_url, permalink_url, preview_image_url
+  // preview_image_url may be a relative path that needs the API host prepended
   const thumbnailUrl = data.thumb_url || data.grid_url || data.small_url;
   const previewUrl = data.permalink_url || data.small_url;
-  const posterUrl = data.preview_image_url || data.thumb_url;
+  const posterUrl = resolveUrl(data.preview_image_url) || data.thumb_url;
 
   return (
     <div className="mediagraph-asset-detail">

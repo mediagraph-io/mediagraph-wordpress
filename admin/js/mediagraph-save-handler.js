@@ -7,18 +7,105 @@
     'use strict';
 
     /**
+     * Collect Mediagraph assets from Gutenberg blocks
+     * @returns {Array} Array of asset objects with metadata
+     */
+    function collectGutenbergBlockAssets() {
+        const blockAssets = [];
+
+        // Check if Gutenberg is available
+        if (typeof wp === 'undefined' || !wp.data || !wp.data.select('core/block-editor')) {
+            return blockAssets;
+        }
+
+        const blocks = wp.data.select('core/block-editor').getBlocks();
+
+        // Recursively find all Mediagraph blocks
+        function findMediagraphBlocks(blockList) {
+            blockList.forEach(function(block) {
+                if (block.name === 'mediagraph/asset-picker' && block.attributes.assetId) {
+                    const attrs = block.attributes;
+
+                    // Build metadata object from block attributes
+                    const metadata = {
+                        title: attrs.title || '',
+                        byline: attrs.byline || '',
+                        headline: attrs.headline || '',
+                        description: attrs.description || '',
+                        alt_text: attrs.altText || '',
+                        extended_description: attrs.extendedDescription || '',
+                        keywords: attrs.keywords || '',
+                        usage_rights: attrs.usageRights || ''
+                    };
+
+                    // Also include legacy metadata object if present
+                    if (attrs.metadata && typeof attrs.metadata === 'object') {
+                        Object.assign(metadata, attrs.metadata);
+                    }
+
+                    blockAssets.push({
+                        id: attrs.assetId,
+                        guid: attrs.assetGuid || '',
+                        filename: attrs.assetTitle || '',
+                        url: attrs.assetUrl || '',
+                        asset_type: attrs.assetType || 'image',
+                        usage_type: attrs.alignment === 'none' ? 'body_photo' : 'body_photo',
+                        metadata: metadata
+                    });
+                }
+
+                // Recursively check inner blocks
+                if (block.innerBlocks && block.innerBlocks.length > 0) {
+                    findMediagraphBlocks(block.innerBlocks);
+                }
+            });
+        }
+
+        findMediagraphBlocks(blocks);
+        return blockAssets;
+    }
+
+    /**
      * Save Mediagraph assets to post meta
      */
     function saveMediagraphAssets() {
-        // Get assets from global variable
-        const assets = window._mediagraphAssets || [];
+        // Get assets from global variable (classic editor / picker modal)
+        let assets = window._mediagraphAssets || [];
+
+        // Also collect assets from Gutenberg blocks
+        const blockAssets = collectGutenbergBlockAssets();
+
+        // Merge assets, preferring block assets (they have most current metadata)
+        const assetMap = new Map();
+
+        // Add classic/picker assets first
+        assets.forEach(function(asset) {
+            if (asset.id) {
+                assetMap.set(asset.id, asset);
+            }
+        });
+
+        // Add/update with Gutenberg block assets (these are more up-to-date)
+        blockAssets.forEach(function(asset) {
+            if (asset.id) {
+                assetMap.set(asset.id, asset);
+            }
+        });
+
+        // Convert map back to array
+        assets = Array.from(assetMap.values());
 
         if (assets.length === 0) {
             return;
         }
 
         // Get post ID
-        const postId = $('#post_ID').val();
+        let postId = $('#post_ID').val();
+
+        // For Gutenberg, try to get post ID from editor
+        if (!postId && typeof wp !== 'undefined' && wp.data && wp.data.select('core/editor')) {
+            postId = wp.data.select('core/editor').getCurrentPostId();
+        }
 
         if (!postId) {
             return;

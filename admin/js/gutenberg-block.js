@@ -25,6 +25,10 @@
             assetId: {
                 type: 'string'
             },
+            assetGuid: {
+                type: 'string',
+                default: ''
+            },
             assetUrl: {
                 type: 'string'
             },
@@ -33,6 +37,14 @@
             },
             assetHtml: {
                 type: 'string'
+            },
+            assetType: {
+                type: 'string',
+                default: ''
+            },
+            posterUrl: {
+                type: 'string',
+                default: ''
             },
             // Metadata fields
             title: {
@@ -139,7 +151,7 @@
 
                 // Call the global HTML builder if available
                 if (window.mediagraphBuildHtml) {
-                    const newHtml = window.mediagraphBuildHtml(attributes.assetUrl, metadata, displaySettings);
+                    const newHtml = window.mediagraphBuildHtml(attributes.assetUrl, metadata, displaySettings, attributes.assetType, attributes.posterUrl);
                     setAttributes({ assetHtml: newHtml });
                 }
             }

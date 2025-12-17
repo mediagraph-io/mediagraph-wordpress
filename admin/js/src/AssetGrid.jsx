@@ -2,6 +2,20 @@
  * AssetGrid - Display assets in a grid with thumbnails
  */
 
+/**
+ * Resolve a URL to a full URL using the API base URL if it's a relative path
+ */
+const resolveUrl = (url) => {
+  if (!url) return null;
+  // If it's already a full URL, return as-is
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url;
+  }
+  // Prepend the API base URL for relative paths
+  const apiBaseUrl = window.mediagraphPicker?.apiBaseUrl || '';
+  return apiBaseUrl ? `${apiBaseUrl.replace(/\/$/, '')}${url}` : url;
+};
+
 const AssetGrid = ({
   assets,
   isLoading,
@@ -80,9 +94,10 @@ const AssetGrid = ({
                       documentMimeTypes.some(type => asset.mime_type?.includes(type));
 
     // Rails API returns: thumb_url, grid_url, small_url, permalink_url
+    // preview_image_url may be a relative path that needs the API host prepended
     const thumbnailUrl = asset.grid_url || asset.thumb_url || asset.small_url;
     const previewUrl = asset.permalink_url || asset.small_url;
-    const posterUrl = asset.preview_image_url || asset.thumb_url;
+    const posterUrl = resolveUrl(asset.preview_image_url) || asset.thumb_url;
 
     return (
       <div
@@ -94,7 +109,20 @@ const AssetGrid = ({
         {/* Thumbnail */}
         {isVideo ? (
           <div className="mediagraph-asset-thumbnail mediagraph-asset-video">
-            <video src={previewUrl} poster={posterUrl} />
+            {(posterUrl || thumbnailUrl) ? (
+              <img
+                src={posterUrl || thumbnailUrl}
+                alt={asset.alt_text || asset.filename}
+                loading="lazy"
+              />
+            ) : (
+              <div className="mediagraph-video-placeholder">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="2" y="4" width="20" height="16" rx="2" stroke="#666" strokeWidth="2"/>
+                  <path d="M10 8.5L16 12L10 15.5V8.5Z" fill="#666"/>
+                </svg>
+              </div>
+            )}
             <span className="mediagraph-asset-type-badge">▶ Video</span>
           </div>
         ) : isAudio ? (

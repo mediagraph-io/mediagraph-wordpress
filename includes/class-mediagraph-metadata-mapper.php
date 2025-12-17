@@ -165,13 +165,47 @@ abstract class Mediagraph_Metadata_Mapper {
         $alt_text = isset( $metadata['alt_text'] ) ? $metadata['alt_text'] :
                     ( isset( $asset['alt_text'] ) ? $asset['alt_text'] : '' );
 
-        // Build metadata JSON for additional article-specific fields
+        // Build metadata JSON for all article-specific Asset Metadata fields
         $article_metadata = array();
+
+        // Title
+        if ( isset( $metadata['title'] ) && ! empty( $metadata['title'] ) ) {
+            $article_metadata['title'] = $metadata['title'];
+        }
+
+        // Byline
+        if ( isset( $metadata['byline'] ) && ! empty( $metadata['byline'] ) ) {
+            $article_metadata['byline'] = $metadata['byline'];
+        }
+
+        // Headline
         if ( isset( $metadata['headline'] ) && ! empty( $metadata['headline'] ) ) {
             $article_metadata['headline'] = $metadata['headline'];
         }
+
+        // Description
+        if ( isset( $metadata['description'] ) && ! empty( $metadata['description'] ) ) {
+            $article_metadata['description'] = $metadata['description'];
+        }
+
+        // Alt Text
+        if ( isset( $metadata['alt_text'] ) && ! empty( $metadata['alt_text'] ) ) {
+            $article_metadata['alt_text'] = $metadata['alt_text'];
+        }
+
+        // Extended Description
         if ( isset( $metadata['extended_description'] ) && ! empty( $metadata['extended_description'] ) ) {
             $article_metadata['extended_description'] = $metadata['extended_description'];
+        }
+
+        // Keywords
+        if ( isset( $metadata['keywords'] ) && ! empty( $metadata['keywords'] ) ) {
+            $article_metadata['keywords'] = $metadata['keywords'];
+        }
+
+        // Usage Rights
+        if ( isset( $metadata['usage_rights'] ) && ! empty( $metadata['usage_rights'] ) ) {
+            $article_metadata['usage_rights'] = $metadata['usage_rights'];
         }
 
         return array(
