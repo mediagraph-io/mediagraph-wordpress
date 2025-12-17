@@ -130,8 +130,9 @@ class Mediagraph_Picker {
         add_action( 'wp_ajax_mediagraph_save_assets', array( $this, 'ajax_save_assets' ) );
 
         // Post publish hook for write-back
-        add_action( 'publish_post', array( $this, 'handle_post_publish' ), 10, 2 );
-        add_action( 'publish_page', array( $this, 'handle_post_publish' ), 10, 2 );
+        // Use wp_after_insert_post (WP 5.6+) instead of publish_post
+        // This fires AFTER taxonomy terms are saved, fixing Gutenberg timing issues
+        add_action( 'wp_after_insert_post', array( $this, 'handle_post_publish_after_insert' ), 10, 4 );
 
         // Add Mediagraph fields to attachment details
         add_filter( 'attachment_fields_to_edit', array( $this, 'add_mediagraph_fields_to_attachment' ), 10, 2 );
@@ -508,11 +509,24 @@ class Mediagraph_Picker {
 
     /**
      * Handle post publish - send metadata to Mediagraph
+     * Uses wp_after_insert_post hook which fires AFTER taxonomy terms are saved
      *
-     * @param int     $post_id Post ID
-     * @param WP_Post $post    Post object
+     * @param int          $post_id     Post ID
+     * @param WP_Post      $post        Post object
+     * @param bool         $update      Whether this is an update
+     * @param WP_Post|null $post_before Post object before the update, or null for new posts
      */
-    public function handle_post_publish( $post_id, $post ) {
+    public function handle_post_publish_after_insert( $post_id, $post, $update, $post_before ) {
+        // Only process published posts/pages
+        if ( ! in_array( $post->post_type, array( 'post', 'page' ), true ) ) {
+            return;
+        }
+
+        // Only process when status is 'publish'
+        if ( 'publish' !== $post->post_status ) {
+            return;
+        }
+
         // Skip if not connected
         if ( ! $this->oauth->is_connected() ) {
             return;

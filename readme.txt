@@ -1,5 +1,5 @@
 === Mediagraph File Picker ===
-Version: 1.1.0
+Version: 1.2.0
 Requires at least: WordPress 5.8
 Requires PHP: 7.4
 License: GPLv2 or later
