@@ -485,7 +485,7 @@ const AssetDetail = ({ asset, onClose, onInsert, ajaxUrl, nonce }) => {
           >
             {isInserting ? (
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-                <span className="mediagraph-spinner" style={{ width: '14px', height: '14px', borderWidth: '2px' }}></span>
+                <span className="mediagraph-spinner" style={{ width: '14px', height: '14px', borderWidth: '2px', margin: 0 }}></span>
                 <span>Downloading...</span>
               </span>
             ) : (

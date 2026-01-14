@@ -4,7 +4,7 @@
 
 import { useState } from 'react';
 
-const ContainerTree = ({ assetGroups, currentContainer, onContainerSelect, ajaxUrl, nonce }) => {
+const ContainerTree = ({ assetGroups, currentContainer, onContainerSelect, onReload, isReloading, ajaxUrl, nonce }) => {
   const [expandedNodes, setExpandedNodes] = useState(new Set());
   const [loadingNodes, setLoadingNodes] = useState(new Set());
   const [nodeChildren, setNodeChildren] = useState({}); // Cache loaded children
@@ -227,39 +227,65 @@ const ContainerTree = ({ assetGroups, currentContainer, onContainerSelect, ajaxU
 
   return (
     <div className="mediagraph-picker-sidebar">
-      {/* All Assets */}
-      <div className="mediagraph-container-section">
+      {/* Sidebar Header with Reload */}
+      <div className="mediagraph-sidebar-header">
+        <span className="mediagraph-sidebar-title">Browse</span>
         <button
-          className={`mediagraph-container-button mediagraph-all-assets ${!currentContainer ? 'active' : ''}`}
-          onClick={() => onContainerSelect(null)}
+          className="mediagraph-reload-button"
+          onClick={onReload}
+          disabled={isReloading}
+          title="Reload asset groups"
         >
-          <span className="mediagraph-container-icon">📂</span>
-          <span className="mediagraph-container-name">All Assets</span>
+          {isReloading ? (
+            <span className="mediagraph-reload-spinner"></span>
+          ) : (
+            <span className="mediagraph-reload-icon">↻</span>
+          )}
         </button>
       </div>
 
-      {/* Storage Folders */}
-      {renderSection(
-        'Storage Folders',
-        assetGroups.folders,
-        'No folders available',
-        'folders'
-      )}
+      {isReloading ? (
+        <div className="mediagraph-sidebar-loading">
+          <span className="mediagraph-spinner"></span>
+          <div>Loading...</div>
+        </div>
+      ) : (
+        <>
+          {/* All Assets */}
+          <div className="mediagraph-container-section">
+            <button
+              className={`mediagraph-container-button mediagraph-all-assets ${!currentContainer ? 'active' : ''}`}
+              onClick={() => onContainerSelect(null)}
+            >
+              <span className="mediagraph-container-icon">📂</span>
+              <span className="mediagraph-container-name">All Assets</span>
+            </button>
+          </div>
 
-      {/* Collections */}
-      {renderSection(
-        'Collections',
-        assetGroups.collections,
-        'No collections available',
-        'collections'
-      )}
+          {/* Storage Folders */}
+          {renderSection(
+            'Storage Folders',
+            assetGroups.folders,
+            'No folders available',
+            'folders'
+          )}
 
-      {/* Lightboxes */}
-      {renderSection(
-        'Lightboxes',
-        assetGroups.lightboxes,
-        'No lightboxes available',
-        'lightboxes'
+          {/* Collections */}
+          {renderSection(
+            'Collections',
+            assetGroups.collections,
+            'No collections available',
+            'collections'
+          )}
+
+          {/* Lightboxes */}
+          {renderSection(
+            'Lightboxes',
+            assetGroups.lightboxes,
+            'No lightboxes available',
+            'lightboxes'
+          )}
+        </>
       )}
     </div>
   );

@@ -439,9 +439,9 @@ const MediaPicker = ({ editorId }) => {
       }
     }
 
-    // Add caption if specified
-    if (metadata.caption) {
-      html = `<figure>${html}<figcaption>${metadata.caption}</figcaption></figure>`;
+    // Add caption if description is specified
+    if (metadata.description) {
+      html = `<figure>${html}<figcaption>${metadata.description}</figcaption></figure>`;
     }
 
     return html;
@@ -542,6 +542,8 @@ const MediaPicker = ({ editorId }) => {
                 assetGroups={assetGroups}
                 currentContainer={currentContainer}
                 onContainerSelect={handleContainerSelect}
+                onReload={loadAssetGroups}
+                isReloading={isLoading}
                 ajaxUrl={ajaxUrl}
                 nonce={nonce}
               />
@@ -553,8 +555,10 @@ const MediaPicker = ({ editorId }) => {
               isLoading={isLoadingAssets}
               error={error}
               onAssetSelect={handleAssetSelect}
+              onReload={loadAssets}
               currentPage={currentPage}
               totalPages={Math.ceil(totalAssets / perPage)}
+              totalAssets={totalAssets}
               onPageChange={setCurrentPage}
             />
           </div>

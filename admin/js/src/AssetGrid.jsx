@@ -21,8 +21,10 @@ const AssetGrid = ({
   isLoading,
   error,
   onAssetSelect,
+  onReload,
   currentPage,
   totalPages,
+  totalAssets,
   onPageChange,
 }) => {
   /**
@@ -300,6 +302,25 @@ const AssetGrid = ({
 
   return (
     <div className="mediagraph-picker-main">
+      {/* Grid Header */}
+      <div className="mediagraph-grid-header">
+        <span className="mediagraph-asset-count">
+          {totalAssets !== undefined ? `${totalAssets.toLocaleString()} asset${totalAssets !== 1 ? 's' : ''}` : ''}
+        </span>
+        <button
+          className="mediagraph-reload-button"
+          onClick={onReload}
+          disabled={isLoading}
+          title="Reload assets"
+        >
+          {isLoading ? (
+            <span className="mediagraph-reload-spinner"></span>
+          ) : (
+            <span className="mediagraph-reload-icon">↻</span>
+          )}
+        </button>
+      </div>
+
       {/* Asset Grid */}
       <div className="mediagraph-asset-grid">
         {assets.map(asset => renderAsset(asset))}
