@@ -4,7 +4,7 @@
  *
  * Handles OAuth 2.0 authentication flow with Mediagraph API.
  *
- * @package MediagraphPicker
+ * @package MediagraphAssets
  */
 
 // Exit if accessed directly
@@ -153,8 +153,8 @@ class Mediagraph_OAuth {
      */
     public function render_callback_page() {
         echo '<div class="wrap">';
-        echo '<h1>' . esc_html__( 'Connecting to Mediagraph...', 'mediagraph-picker' ) . '</h1>';
-        echo '<p>' . esc_html__( 'Please wait while we complete the connection.', 'mediagraph-picker' ) . '</p>';
+        echo '<h1>' . esc_html__( 'Connecting to Mediagraph...', 'mediagraph-assets' ) . '</h1>';
+        echo '<p>' . esc_html__( 'Please wait while we complete the connection.', 'mediagraph-assets' ) . '</p>';
         echo '</div>';
     }
 
@@ -169,20 +169,20 @@ class Mediagraph_OAuth {
 
         // Check for errors
         if ( isset( $_GET['error'] ) ) {
-            $error_description = isset( $_GET['error_description'] ) ? sanitize_text_field( wp_unslash( $_GET['error_description'] ) ) : __( 'OAuth authorization failed', 'mediagraph-picker' );
+            $error_description = isset( $_GET['error_description'] ) ? sanitize_text_field( wp_unslash( $_GET['error_description'] ) ) : __( 'OAuth authorization failed', 'mediagraph-assets' );
             wp_die( esc_html( $error_description ) );
         }
 
         // Get authorization code
         if ( ! isset( $_GET['code'] ) ) {
-            wp_die( esc_html__( 'Authorization code not received', 'mediagraph-picker' ) );
+            wp_die( esc_html__( 'Authorization code not received', 'mediagraph-assets' ) );
         }
 
         $code = sanitize_text_field( wp_unslash( $_GET['code'] ) );
 
         // Verify state for CSRF protection
         if ( ! isset( $_GET['state'] ) ) {
-            wp_die( esc_html__( 'State parameter missing', 'mediagraph-picker' ) );
+            wp_die( esc_html__( 'State parameter missing', 'mediagraph-assets' ) );
         }
 
         $state = sanitize_text_field( wp_unslash( $_GET['state'] ) );
@@ -190,7 +190,7 @@ class Mediagraph_OAuth {
 
         if ( $state !== $saved_state ) {
             delete_transient( 'mediagraph_oauth_state' );
-            wp_die( esc_html__( 'Invalid state parameter', 'mediagraph-picker' ) );
+            wp_die( esc_html__( 'Invalid state parameter', 'mediagraph-assets' ) );
         }
 
         delete_transient( 'mediagraph_oauth_state' );
@@ -225,7 +225,7 @@ class Mediagraph_OAuth {
         delete_transient( 'mediagraph_pkce_verifier' );
 
         if ( empty( $code_verifier ) ) {
-            return new WP_Error( 'pkce_verifier_missing', __( 'PKCE verifier not found. Please try connecting again.', 'mediagraph-picker' ) );
+            return new WP_Error( 'pkce_verifier_missing', __( 'PKCE verifier not found. Please try connecting again.', 'mediagraph-assets' ) );
         }
 
         $response = wp_remote_post( $this->token_url, array(
@@ -248,7 +248,7 @@ class Mediagraph_OAuth {
         $data = json_decode( $response_body, true );
 
         if ( $response_code !== 200 ) {
-            $error_message = isset( $data['error_description'] ) ? $data['error_description'] : __( 'Token exchange failed', 'mediagraph-picker' );
+            $error_message = isset( $data['error_description'] ) ? $data['error_description'] : __( 'Token exchange failed', 'mediagraph-assets' );
 
             // Log detailed error for debugging
             error_log( 'Mediagraph token exchange failed:' );

@@ -5,7 +5,7 @@
  * Handles all communication with the Mediagraph API including authentication,
  * asset retrieval, search, and metadata write-back.
  *
- * @package MediagraphPicker
+ * @package MediagraphAssets
  */
 
 // Exit if accessed directly
@@ -106,7 +106,7 @@ class Mediagraph_API {
 
         // Handle error responses
         if ( $response_code >= 400 ) {
-            $error_message = isset( $data['error'] ) ? $data['error'] : __( 'API request failed', 'mediagraph-picker' );
+            $error_message = isset( $data['error'] ) ? $data['error'] : __( 'API request failed', 'mediagraph-assets' );
             return new WP_Error( 'mediagraph_api_error', $error_message, array( 'status' => $response_code ) );
         }
 
@@ -341,7 +341,7 @@ class Mediagraph_API {
      */
     public function get_asset( $asset_id ) {
         if ( empty( $asset_id ) ) {
-            return new WP_Error( 'invalid_asset_id', __( 'Asset ID is required', 'mediagraph-picker' ) );
+            return new WP_Error( 'invalid_asset_id', __( 'Asset ID is required', 'mediagraph-assets' ) );
         }
 
         return $this->make_request( "api/assets/{$asset_id}" );
@@ -361,7 +361,7 @@ class Mediagraph_API {
      */
     public function get_download_url( $asset_id, $size = 'original' ) {
         if ( empty( $asset_id ) ) {
-            return new WP_Error( 'invalid_asset_id', __( 'Asset ID is required', 'mediagraph-picker' ) );
+            return new WP_Error( 'invalid_asset_id', __( 'Asset ID is required', 'mediagraph-assets' ) );
         }
 
         // Get asset details which include preview URLs
@@ -401,8 +401,12 @@ class Mediagraph_API {
             case 'full':
             case 'original':
             default:
-                // Use permalink_url for full size (these are ActiveStorage URLs, not actual originals)
-                $url = isset( $asset['permalink_url'] ) ? $asset['permalink_url'] : null;
+                // Use full_url for actual full-size image (larger than permalink_url which is 1200px max)
+                // Fall back to permalink_url if full_url is not available
+                $url = isset( $asset['full_url'] ) ? $asset['full_url'] : null;
+                if ( ! $url ) {
+                    $url = isset( $asset['permalink_url'] ) ? $asset['permalink_url'] : null;
+                }
                 break;
         }
 
@@ -415,7 +419,7 @@ class Mediagraph_API {
         }
 
         if ( ! $url ) {
-            return new WP_Error( 'no_download_url', __( 'No preview URL available for this asset', 'mediagraph-picker' ) );
+            return new WP_Error( 'no_download_url', __( 'No preview URL available for this asset', 'mediagraph-assets' ) );
         }
 
         return $url;
@@ -429,7 +433,7 @@ class Mediagraph_API {
      */
     public function send_publish_metadata( $metadata ) {
         if ( empty( $metadata ) ) {
-            return new WP_Error( 'empty_metadata', __( 'Metadata is required', 'mediagraph-picker' ) );
+            return new WP_Error( 'empty_metadata', __( 'Metadata is required', 'mediagraph-assets' ) );
         }
 
         return $this->make_request( 'api/published_assets', $metadata, 'POST' );
@@ -499,7 +503,7 @@ class Mediagraph_API {
         }
 
         if ( empty( $filename ) ) {
-            return new WP_Error( 'no_filename', __( 'Could not determine filename for asset', 'mediagraph-picker' ) );
+            return new WP_Error( 'no_filename', __( 'Could not determine filename for asset', 'mediagraph-assets' ) );
         }
 
         // Get download URL
@@ -540,10 +544,18 @@ class Mediagraph_API {
         require_once( ABSPATH . 'wp-admin/includes/file.php' );
         require_once( ABSPATH . 'wp-admin/includes/media.php' );
 
+        // Determine caption: prefer explicit caption, fall back to description
+        $caption = '';
+        if ( ! empty( $metadata['caption'] ) ) {
+            $caption = $metadata['caption'];
+        } elseif ( ! empty( $metadata['description'] ) ) {
+            $caption = $metadata['description'];
+        }
+
         $attachment_id = media_handle_sideload( $file_array, $post_id, null, array(
             'post_title'   => isset( $metadata['title'] ) ? $metadata['title'] : '',
             'post_content' => isset( $metadata['description'] ) ? $metadata['description'] : '',
-            'post_excerpt' => isset( $metadata['caption'] ) ? $metadata['caption'] : '',
+            'post_excerpt' => $caption, // WordPress uses post_excerpt as the caption field
         ));
 
         // Clean up temp file

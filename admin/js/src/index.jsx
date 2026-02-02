@@ -63,5 +63,5 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  console.log('Mediagraph Picker initialized');
+  console.log('Mediagraph Assets initialized');
 });

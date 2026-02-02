@@ -1,7 +1,7 @@
 (function(wp) {
     const { registerBlockType } = wp.blocks;
     const { Button, ToolbarButton, ToolbarGroup, PanelBody, TextControl, TextareaControl, SelectControl } = wp.components;
-    const { useBlockProps, BlockControls, InspectorControls } = wp.blockEditor;
+    const { useBlockProps, BlockControls, InspectorControls, RichText } = wp.blockEditor;
     const { createElement: el, useEffect, useRef } = wp.element;
 
     registerBlockType('mediagraph/asset-picker', {
@@ -296,10 +296,42 @@
                             })
                         )
                     ),
-                    // Show the asset
-                    el('div', {
-                        dangerouslySetInnerHTML: { __html: attributes.assetHtml }
-                    })
+                    // Show the asset with inline-editable caption
+                    el('figure', {
+                        className: 'wp-block-mediagraph-asset' + (attributes.alignment && attributes.alignment !== 'none' ? ' align' + attributes.alignment : '')
+                    },
+                        // Render the media element directly
+                        attributes.assetType === 'video'
+                            ? el('video', {
+                                src: attributes.assetUrl,
+                                controls: true,
+                                poster: attributes.posterUrl || undefined,
+                                style: { maxWidth: '100%' }
+                            })
+                            : attributes.assetType === 'audio'
+                                ? el('audio', {
+                                    src: attributes.assetUrl,
+                                    controls: true,
+                                    style: { maxWidth: '100%' }
+                                })
+                                : el('img', {
+                                    src: attributes.assetUrl,
+                                    alt: attributes.altText || '',
+                                    title: attributes.title || undefined,
+                                    style: { maxWidth: '100%' }
+                                }),
+                        // Inline-editable caption using RichText
+                        el(RichText, {
+                            tagName: 'figcaption',
+                            value: attributes.description,
+                            onChange: (value) => {
+                                setAttributes({ description: value });
+                                setTimeout(rebuildAssetHtml, 0);
+                            },
+                            placeholder: 'Add caption...',
+                            className: 'wp-element-caption'
+                        })
+                    )
                 );
             }
 
@@ -321,7 +353,7 @@
                     el(Button, {
                         variant: 'primary',
                         onClick: openMediagraphPicker
-                    }, 'Open Mediagraph Picker')
+                    }, 'Open Mediagraph Assets')
                 )
             );
         },

@@ -501,7 +501,7 @@ const MediaPicker = ({ editorId }) => {
                 </g>
               </svg>
               <h2 style={{ margin: 0 }}>
-                Mediagraph Picker
+                Mediagraph Assets
                 {window.mediagraphPicker?.organizationName && (
                   <span style={{ fontWeight: 'normal', fontSize: '0.85em', color: '#666', marginLeft: '8px' }}>
                     ({window.mediagraphPicker.organizationName})

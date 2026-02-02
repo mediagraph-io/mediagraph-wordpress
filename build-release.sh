@@ -6,7 +6,7 @@
 set -e
 
 VERSION="1.2.1"
-PLUGIN_SLUG="mediagraph-picker"
+PLUGIN_SLUG="mediagraph-assets"
 BUILD_DIR="build"
 RELEASE_DIR="releases"
 

@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name: Mediagraph File Picker
+ * Plugin Name: Mediagraph Assets
  * Plugin URI: https://www.mediagraph.io/wordpress-plugin
  * Description: Integrates Mediagraph's media asset management system into WordPress media library. Browse, search, and insert assets from Mediagraph Collections, Storage Folders, and Lightboxes.
  * Version: 1.2.1
@@ -8,12 +8,12 @@
  * Author URI: https://www.mediagraph.io
  * License: GPL-2.0+
  * License URI: http://www.gnu.org/licenses/gpl-2.0.txt
- * Text Domain: mediagraph-picker
+ * Text Domain: mediagraph-assets
  * Domain Path: /languages
  * Requires at least: 5.8
  * Requires PHP: 7.4
  *
- * @package MediagraphPicker
+ * @package MediagraphAssets
  */
 
 // Exit if accessed directly
@@ -210,7 +210,7 @@ class Mediagraph_Picker {
 
         // Enqueue React picker bundle
         wp_enqueue_script(
-            'mediagraph-picker',
+            'mediagraph-assets',
             MEDIAGRAPH_PICKER_PLUGIN_URL . 'admin/js/dist/mediagraph-picker.bundle.js',
             array( 'jquery', 'wp-element' ),
             MEDIAGRAPH_PICKER_VERSION,
@@ -221,14 +221,24 @@ class Mediagraph_Picker {
         wp_enqueue_script(
             'mediagraph-save-handler',
             MEDIAGRAPH_PICKER_PLUGIN_URL . 'admin/js/mediagraph-save-handler.js',
-            array( 'jquery', 'mediagraph-picker' ),
+            array( 'jquery', 'mediagraph-assets' ),
+            MEDIAGRAPH_PICKER_VERSION,
+            true
+        );
+
+        // Enqueue Media Modal integration (adds Mediagraph tab to WordPress Media Modal)
+        wp_enqueue_media();
+        wp_enqueue_script(
+            'mediagraph-media-modal',
+            MEDIAGRAPH_PICKER_PLUGIN_URL . 'admin/js/mediagraph-media-modal.js',
+            array( 'jquery', 'media-views', 'media-models' ),
             MEDIAGRAPH_PICKER_VERSION,
             true
         );
 
         // Enqueue styles
         wp_enqueue_style(
-            'mediagraph-picker',
+            'mediagraph-assets',
             MEDIAGRAPH_PICKER_PLUGIN_URL . 'admin/css/mediagraph-picker.css',
             array(),
             MEDIAGRAPH_PICKER_VERSION
@@ -236,7 +246,7 @@ class Mediagraph_Picker {
 
         // Localize script with settings
         wp_localize_script(
-            'mediagraph-picker',
+            'mediagraph-assets',
             'mediagraphPicker',
             array(
                 'ajaxUrl'          => admin_url( 'admin-ajax.php' ),
@@ -246,11 +256,12 @@ class Mediagraph_Picker {
                 'organizationName' => get_option( 'mediagraph_organization_name', '' ),
                 'apiBaseUrl'       => get_option( 'mediagraph_api_base_url', 'https://mediagraph.io' ),
                 'platform'         => get_option( 'mediagraph_platform', 'wordpress' ),
+                'settingsUrl'      => admin_url( 'options-general.php?page=mediagraph-settings' ),
                 'strings'          => array(
-                    'notConnected' => __( 'Please connect to Mediagraph in Settings > Mediagraph', 'mediagraph-picker' ),
-                    'loading'      => __( 'Loading...', 'mediagraph-picker' ),
-                    'error'        => __( 'An error occurred. Please try again.', 'mediagraph-picker' ),
-                    'noAssets'     => __( 'No assets found.', 'mediagraph-picker' ),
+                    'notConnected' => __( 'Please connect to Mediagraph in Settings > Mediagraph', 'mediagraph-assets' ),
+                    'loading'      => __( 'Loading...', 'mediagraph-assets' ),
+                    'error'        => __( 'An error occurred. Please try again.', 'mediagraph-assets' ),
+                    'noAssets'     => __( 'No assets found.', 'mediagraph-assets' ),
                 ),
             )
         );
@@ -261,8 +272,8 @@ class Mediagraph_Picker {
      */
     public function add_admin_menu() {
         add_options_page(
-            __( 'Mediagraph Settings', 'mediagraph-picker' ),
-            __( 'Mediagraph', 'mediagraph-picker' ),
+            __( 'Mediagraph Settings', 'mediagraph-assets' ),
+            __( 'Mediagraph', 'mediagraph-assets' ),
             'manage_options',
             'mediagraph-settings',
             array( $this->settings, 'render_settings_page' )
@@ -273,8 +284,8 @@ class Mediagraph_Picker {
         // The actual callback handling is done in Mediagraph_OAuth::handle_oauth_callback()
         add_submenu_page(
             null, // null parent = hidden page
-            __( 'Mediagraph OAuth Callback', 'mediagraph-picker' ),
-            __( 'Mediagraph OAuth Callback', 'mediagraph-picker' ),
+            __( 'Mediagraph OAuth Callback', 'mediagraph-assets' ),
+            __( 'Mediagraph OAuth Callback', 'mediagraph-assets' ),
             'read', // Any logged-in user can access this page (OAuth state verification provides security)
             'mediagraph-callback',
             array( $this->oauth, 'render_callback_page' )
@@ -297,7 +308,7 @@ class Mediagraph_Picker {
                 %s
             </button>',
             esc_attr( $editor_id ),
-            esc_html__( 'Add from Mediagraph', 'mediagraph-picker' )
+            esc_html__( 'Add from Mediagraph', 'mediagraph-assets' )
         );
     }
 
@@ -343,7 +354,7 @@ class Mediagraph_Picker {
         $sub_type = isset( $_POST['sub_type'] ) ? sanitize_text_field( wp_unslash( $_POST['sub_type'] ) ) : null;
 
         if ( empty( $parent_id ) || empty( $parent_type ) ) {
-            wp_send_json_error( array( 'message' => __( 'Parent ID and type are required', 'mediagraph-picker' ) ) );
+            wp_send_json_error( array( 'message' => __( 'Parent ID and type are required', 'mediagraph-assets' ) ) );
         }
 
         $args = array(
@@ -407,7 +418,7 @@ class Mediagraph_Picker {
         $asset_id = isset( $_POST['asset_id'] ) ? sanitize_text_field( wp_unslash( $_POST['asset_id'] ) ) : '';
 
         if ( empty( $asset_id ) ) {
-            wp_send_json_error( array( 'message' => __( 'Asset ID is required', 'mediagraph-picker' ) ) );
+            wp_send_json_error( array( 'message' => __( 'Asset ID is required', 'mediagraph-assets' ) ) );
         }
 
         $asset = $this->api->get_asset( $asset_id );
@@ -429,7 +440,7 @@ class Mediagraph_Picker {
         $size = isset( $_POST['size'] ) ? sanitize_text_field( wp_unslash( $_POST['size'] ) ) : 'original';
 
         if ( empty( $asset_id ) ) {
-            wp_send_json_error( array( 'message' => __( 'Asset ID is required', 'mediagraph-picker' ) ) );
+            wp_send_json_error( array( 'message' => __( 'Asset ID is required', 'mediagraph-assets' ) ) );
         }
 
         $download_url = $this->api->get_download_url( $asset_id, $size );
@@ -453,7 +464,7 @@ class Mediagraph_Picker {
         $metadata = isset( $_POST['metadata'] ) ? json_decode( wp_unslash( $_POST['metadata'] ), true ) : array();
 
         if ( empty( $asset_id ) ) {
-            wp_send_json_error( array( 'message' => __( 'Asset ID is required', 'mediagraph-picker' ) ) );
+            wp_send_json_error( array( 'message' => __( 'Asset ID is required', 'mediagraph-assets' ) ) );
         }
 
         // Download asset to media library and associate with post
@@ -467,7 +478,7 @@ class Mediagraph_Picker {
         $attachment_url = wp_get_attachment_url( $attachment_id );
 
         if ( ! $attachment_url ) {
-            wp_send_json_error( array( 'message' => __( 'Failed to get attachment URL', 'mediagraph-picker' ) ) );
+            wp_send_json_error( array( 'message' => __( 'Failed to get attachment URL', 'mediagraph-assets' ) ) );
         }
 
         wp_send_json_success( array(
@@ -486,25 +497,25 @@ class Mediagraph_Picker {
         $assets_json = isset( $_POST['assets'] ) ? wp_unslash( $_POST['assets'] ) : '';
 
         if ( empty( $post_id ) || empty( $assets_json ) ) {
-            wp_send_json_error( array( 'message' => __( 'Post ID and assets are required', 'mediagraph-picker' ) ) );
+            wp_send_json_error( array( 'message' => __( 'Post ID and assets are required', 'mediagraph-assets' ) ) );
         }
 
         // Check permissions
         if ( ! current_user_can( 'edit_post', $post_id ) ) {
-            wp_send_json_error( array( 'message' => __( 'You do not have permission to edit this post', 'mediagraph-picker' ) ) );
+            wp_send_json_error( array( 'message' => __( 'You do not have permission to edit this post', 'mediagraph-assets' ) ) );
         }
 
         // Decode JSON
         $assets = json_decode( $assets_json, true );
 
         if ( json_last_error() !== JSON_ERROR_NONE ) {
-            wp_send_json_error( array( 'message' => __( 'Invalid JSON data', 'mediagraph-picker' ) ) );
+            wp_send_json_error( array( 'message' => __( 'Invalid JSON data', 'mediagraph-assets' ) ) );
         }
 
         // Save to post meta
         update_post_meta( $post_id, '_mediagraph_assets', $assets );
 
-        wp_send_json_success( array( 'message' => __( 'Assets saved successfully', 'mediagraph-picker' ) ) );
+        wp_send_json_success( array( 'message' => __( 'Assets saved successfully', 'mediagraph-assets' ) ) );
     }
 
     /**
@@ -567,7 +578,7 @@ class Mediagraph_Picker {
         add_action( 'admin_notices', function() {
             printf(
                 '<div class="notice notice-success is-dismissible"><p>%s</p></div>',
-                esc_html__( 'Mediagraph metadata updated successfully.', 'mediagraph-picker' )
+                esc_html__( 'Mediagraph metadata updated successfully.', 'mediagraph-assets' )
             );
         });
     }
@@ -670,6 +681,15 @@ class Mediagraph_Picker {
             true
         );
 
+        // Enqueue the Image block extension (adds Mediagraph button to core/image toolbar)
+        wp_enqueue_script(
+            'mediagraph-image-extension',
+            MEDIAGRAPH_PICKER_PLUGIN_URL . 'admin/js/gutenberg-image-extension.js',
+            array( 'wp-hooks', 'wp-compose', 'wp-element', 'wp-block-editor', 'wp-components' ),
+            MEDIAGRAPH_PICKER_VERSION,
+            true
+        );
+
         // Also enqueue the main picker assets (modal, CSS, etc.)
         $this->enqueue_admin_scripts( 'post.php' );
     }
@@ -688,10 +708,10 @@ class Mediagraph_Picker {
         // Only show if this is a Mediagraph asset
         if ( ! empty( $asset_guid ) ) {
             $form_fields['mediagraph_guid'] = array(
-                'label' => __( 'Mediagraph GUID', 'mediagraph-picker' ),
+                'label' => __( 'Mediagraph GUID', 'mediagraph-assets' ),
                 'input' => 'html',
                 'html'  => '<input type="text" class="text" readonly="readonly" value="' . esc_attr( $asset_guid ) . '" />',
-                'helps' => __( 'The globally unique identifier for this asset', 'mediagraph-picker' ),
+                'helps' => __( 'The globally unique identifier for this asset', 'mediagraph-assets' ),
             );
         }
 
@@ -703,7 +723,7 @@ class Mediagraph_Picker {
      */
     public function load_textdomain() {
         load_plugin_textdomain(
-            'mediagraph-picker',
+            'mediagraph-assets',
             false,
             dirname( plugin_basename( MEDIAGRAPH_PICKER_PLUGIN_FILE ) ) . '/languages'
         );

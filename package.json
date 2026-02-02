@@ -1,5 +1,5 @@
 {
-  "name": "mediagraph-picker",
+  "name": "mediagraph-assets",
   "version": "1.2.1",
   "description": "WordPress plugin for integrating Mediagraph media asset management",
   "main": "admin/js/src/index.jsx",

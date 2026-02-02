@@ -4,7 +4,7 @@
  *
  * Manages plugin settings and OAuth configuration.
  *
- * @package MediagraphPicker
+ * @package MediagraphAssets
  */
 
 // Exit if accessed directly
@@ -48,14 +48,14 @@ class Mediagraph_Settings {
         // Add settings sections
         add_settings_section(
             'mediagraph_advanced_section',
-            __( 'Advanced Settings', 'mediagraph-picker' ),
+            __( 'Advanced Settings', 'mediagraph-assets' ),
             array( $this, 'render_advanced_section' ),
             'mediagraph-settings'
         );
 
         add_settings_section(
             'mediagraph_platform_section',
-            __( 'Platform Settings', 'mediagraph-picker' ),
+            __( 'Platform Settings', 'mediagraph-assets' ),
             array( $this, 'render_platform_section' ),
             'mediagraph-settings'
         );
@@ -63,7 +63,7 @@ class Mediagraph_Settings {
         // Add settings fields
         add_settings_field(
             'mediagraph_api_base_url',
-            __( 'API Base URL', 'mediagraph-picker' ),
+            __( 'API Base URL', 'mediagraph-assets' ),
             array( $this, 'render_api_base_url_field' ),
             'mediagraph-settings',
             'mediagraph_advanced_section'
@@ -71,7 +71,7 @@ class Mediagraph_Settings {
 
         add_settings_field(
             'mediagraph_platform',
-            __( 'Publishing Platform', 'mediagraph-picker' ),
+            __( 'Publishing Platform', 'mediagraph-assets' ),
             array( $this, 'render_platform_field' ),
             'mediagraph-settings',
             'mediagraph_platform_section'
@@ -83,7 +83,7 @@ class Mediagraph_Settings {
      */
     public function render_advanced_section() {
         echo '<p>';
-        echo esc_html__( 'Advanced settings for self-hosted or custom Mediagraph instances.', 'mediagraph-picker' );
+        echo esc_html__( 'Advanced settings for self-hosted or custom Mediagraph instances.', 'mediagraph-assets' );
         echo '</p>';
     }
 
@@ -92,7 +92,7 @@ class Mediagraph_Settings {
      */
     public function render_platform_section() {
         echo '<p>';
-        echo esc_html__( 'Select your publishing platform to configure the correct metadata mapping.', 'mediagraph-picker' );
+        echo esc_html__( 'Select your publishing platform to configure the correct metadata mapping.', 'mediagraph-assets' );
         echo '</p>';
     }
 
@@ -106,7 +106,7 @@ class Mediagraph_Settings {
             esc_attr( $value )
         );
         echo '<p class="description">';
-        echo esc_html__( 'Base URL for Mediagraph API (use default unless you have a custom instance)', 'mediagraph-picker' );
+        echo esc_html__( 'Base URL for Mediagraph API (use default unless you have a custom instance)', 'mediagraph-assets' );
         echo '</p>';
     }
 
@@ -116,9 +116,9 @@ class Mediagraph_Settings {
     public function render_platform_field() {
         $value = get_option( 'mediagraph_platform', 'wordpress' );
         $platforms = array(
-            'wordpress' => __( 'WordPress (Standard)', 'mediagraph-picker' ),
-            'newspack'  => __( 'Newspack', 'mediagraph-picker' ) . ' ' . __( '(Coming soon)', 'mediagraph-picker' ),
-            'blox'      => __( 'Blox CMS', 'mediagraph-picker' ) . ' ' . __( '(Coming soon)', 'mediagraph-picker' ),
+            'wordpress' => __( 'WordPress (Standard)', 'mediagraph-assets' ),
+            'newspack'  => __( 'Newspack', 'mediagraph-assets' ) . ' ' . __( '(Coming soon)', 'mediagraph-assets' ),
+            'blox'      => __( 'Blox CMS', 'mediagraph-assets' ) . ' ' . __( '(Coming soon)', 'mediagraph-assets' ),
         );
 
         echo '<select name="mediagraph_platform" class="regular-text">';
@@ -133,7 +133,7 @@ class Mediagraph_Settings {
         }
         echo '</select>';
         echo '<p class="description">';
-        echo esc_html__( 'Determines how article metadata is formatted when sent back to Mediagraph', 'mediagraph-picker' );
+        echo esc_html__( 'Determines how article metadata is formatted when sent back to Mediagraph', 'mediagraph-assets' );
         echo '</p>';
     }
 
@@ -142,7 +142,7 @@ class Mediagraph_Settings {
      */
     public function render_settings_page() {
         if ( ! current_user_can( 'manage_options' ) ) {
-            wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'mediagraph-picker' ) );
+            wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'mediagraph-assets' ) );
         }
 
         $oauth = new Mediagraph_OAuth();
@@ -166,10 +166,10 @@ class Mediagraph_Settings {
 
             <hr />
 
-            <h2><?php esc_html_e( 'Plugin Information', 'mediagraph-picker' ); ?></h2>
+            <h2><?php esc_html_e( 'Plugin Information', 'mediagraph-assets' ); ?></h2>
             <table class="form-table">
                 <tr>
-                    <th scope="row"><?php esc_html_e( 'Plugin Version', 'mediagraph-picker' ); ?></th>
+                    <th scope="row"><?php esc_html_e( 'Plugin Version', 'mediagraph-assets' ); ?></th>
                     <td><?php echo esc_html( MEDIAGRAPH_PICKER_VERSION ); ?></td>
                 </tr>
             </table>
@@ -184,21 +184,21 @@ class Mediagraph_Settings {
         // Show success message after connecting
         if ( isset( $_GET['connected'] ) && '1' === $_GET['connected'] ) {
             echo '<div class="notice notice-success is-dismissible">';
-            echo '<p>' . esc_html__( 'Successfully connected to Mediagraph!', 'mediagraph-picker' ) . '</p>';
+            echo '<p>' . esc_html__( 'Successfully connected to Mediagraph!', 'mediagraph-assets' ) . '</p>';
             echo '</div>';
         }
 
         // Show success message after disconnecting
         if ( isset( $_GET['disconnected'] ) && '1' === $_GET['disconnected'] ) {
             echo '<div class="notice notice-success is-dismissible">';
-            echo '<p>' . esc_html__( 'Disconnected from Mediagraph.', 'mediagraph-picker' ) . '</p>';
+            echo '<p>' . esc_html__( 'Disconnected from Mediagraph.', 'mediagraph-assets' ) . '</p>';
             echo '</div>';
         }
 
         // Show success message after switching organization
         if ( isset( $_GET['org_switched'] ) && '1' === $_GET['org_switched'] ) {
             echo '<div class="notice notice-success is-dismissible">';
-            echo '<p>' . esc_html__( 'Organization switched successfully.', 'mediagraph-picker' ) . '</p>';
+            echo '<p>' . esc_html__( 'Organization switched successfully.', 'mediagraph-assets' ) . '</p>';
             echo '</div>';
         }
 
@@ -207,11 +207,11 @@ class Mediagraph_Settings {
             $result = sanitize_text_field( wp_unslash( $_GET['test_result'] ) );
             if ( 'success' === $result ) {
                 echo '<div class="notice notice-success is-dismissible">';
-                echo '<p>' . esc_html__( 'Connection test successful!', 'mediagraph-picker' ) . '</p>';
+                echo '<p>' . esc_html__( 'Connection test successful!', 'mediagraph-assets' ) . '</p>';
                 echo '</div>';
             } else {
                 echo '<div class="notice notice-error is-dismissible">';
-                echo '<p>' . esc_html__( 'Connection test failed. Please check your credentials.', 'mediagraph-picker' ) . '</p>';
+                echo '<p>' . esc_html__( 'Connection test failed. Please check your credentials.', 'mediagraph-assets' ) . '</p>';
                 echo '</div>';
             }
         }
@@ -219,7 +219,7 @@ class Mediagraph_Settings {
         // Show settings saved message
         if ( isset( $_GET['settings-updated'] ) && 'true' === $_GET['settings-updated'] ) {
             echo '<div class="notice notice-success is-dismissible">';
-            echo '<p>' . esc_html__( 'Settings saved.', 'mediagraph-picker' ) . '</p>';
+            echo '<p>' . esc_html__( 'Settings saved.', 'mediagraph-assets' ) . '</p>';
             echo '</div>';
         }
     }
@@ -232,15 +232,15 @@ class Mediagraph_Settings {
     private function render_connection_status( $info ) {
         ?>
         <div class="card">
-            <h2><?php esc_html_e( 'Connection Status', 'mediagraph-picker' ); ?></h2>
+            <h2><?php esc_html_e( 'Connection Status', 'mediagraph-assets' ); ?></h2>
             <p class="description">
                 <span class="dashicons dashicons-yes-alt" style="color: #46b450;"></span>
-                <?php esc_html_e( 'Connected to Mediagraph', 'mediagraph-picker' ); ?>
+                <?php esc_html_e( 'Connected to Mediagraph', 'mediagraph-assets' ); ?>
             </p>
 
             <table class="form-table">
                 <tr>
-                    <th scope="row"><?php esc_html_e( 'User', 'mediagraph-picker' ); ?></th>
+                    <th scope="row"><?php esc_html_e( 'User', 'mediagraph-assets' ); ?></th>
                     <td>
                         <?php echo esc_html( $info['user_name'] ); ?>
                         <br />
@@ -248,21 +248,21 @@ class Mediagraph_Settings {
                     </td>
                 </tr>
                 <tr>
-                    <th scope="row"><?php esc_html_e( 'Organization', 'mediagraph-picker' ); ?></th>
+                    <th scope="row"><?php esc_html_e( 'Organization', 'mediagraph-assets' ); ?></th>
                     <td>
                         <?php echo esc_html( $info['organization_name'] ); ?>
                         <br />
                         <span class="description">
                             <?php
                             /* translators: %s: membership role */
-                            printf( esc_html__( 'Role: %s', 'mediagraph-picker' ), esc_html( ucfirst( $info['membership_role'] ) ) );
+                            printf( esc_html__( 'Role: %s', 'mediagraph-assets' ), esc_html( ucfirst( $info['membership_role'] ) ) );
                             ?>
                         </span>
                     </td>
                 </tr>
                 <?php if ( count( $info['available_orgs'] ) > 1 ) : ?>
                 <tr>
-                    <th scope="row"><?php esc_html_e( 'Switch Organization', 'mediagraph-picker' ); ?></th>
+                    <th scope="row"><?php esc_html_e( 'Switch Organization', 'mediagraph-assets' ); ?></th>
                     <td>
                         <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
                             <input type="hidden" name="action" value="mediagraph_switch_org" />
@@ -274,7 +274,7 @@ class Mediagraph_Settings {
                                     </option>
                                 <?php endforeach; ?>
                             </select>
-                            <?php submit_button( __( 'Switch', 'mediagraph-picker' ), 'secondary', 'submit', false ); ?>
+                            <?php submit_button( __( 'Switch', 'mediagraph-assets' ), 'secondary', 'submit', false ); ?>
                         </form>
                     </td>
                 </tr>
@@ -285,20 +285,20 @@ class Mediagraph_Settings {
                 <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="display: inline-block; margin-right: 10px;">
                     <input type="hidden" name="action" value="mediagraph_test_connection" />
                     <?php wp_nonce_field( 'mediagraph_test_connection', 'mediagraph_test_nonce' ); ?>
-                    <?php submit_button( __( 'Test Connection', 'mediagraph-picker' ), 'secondary', 'submit', false ); ?>
+                    <?php submit_button( __( 'Test Connection', 'mediagraph-assets' ), 'secondary', 'submit', false ); ?>
                 </form>
 
-                <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="display: inline-block;" onsubmit="return confirm('<?php echo esc_js( __( 'Are you sure you want to disconnect?', 'mediagraph-picker' ) ); ?>');">
+                <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="display: inline-block;" onsubmit="return confirm('<?php echo esc_js( __( 'Are you sure you want to disconnect?', 'mediagraph-assets' ) ); ?>');">
                     <input type="hidden" name="action" value="mediagraph_disconnect" />
                     <?php wp_nonce_field( 'mediagraph_disconnect', 'mediagraph_disconnect_nonce' ); ?>
-                    <?php submit_button( __( 'Disconnect', 'mediagraph-picker' ), 'delete', 'submit', false ); ?>
+                    <?php submit_button( __( 'Disconnect', 'mediagraph-assets' ), 'delete', 'submit', false ); ?>
                 </form>
             </p>
         </div>
 
         <hr />
 
-        <h2><?php esc_html_e( 'Settings', 'mediagraph-picker' ); ?></h2>
+        <h2><?php esc_html_e( 'Settings', 'mediagraph-assets' ); ?></h2>
         <?php
         $this->render_settings_form();
     }
@@ -309,12 +309,12 @@ class Mediagraph_Settings {
     private function render_setup_form() {
         ?>
         <div class="card">
-            <h2><?php esc_html_e( 'Connect to Mediagraph', 'mediagraph-picker' ); ?></h2>
-            <p><?php esc_html_e( 'Connect to Mediagraph to start browsing and inserting media assets into your WordPress posts.', 'mediagraph-picker' ); ?></p>
+            <h2><?php esc_html_e( 'Connect to Mediagraph', 'mediagraph-assets' ); ?></h2>
+            <p><?php esc_html_e( 'Connect to Mediagraph to start browsing and inserting media assets into your WordPress posts.', 'mediagraph-assets' ); ?></p>
 
             <p>
                 <a href="<?php echo esc_url( ( new Mediagraph_OAuth() )->get_authorization_url() ); ?>" class="button button-primary button-hero">
-                    <?php esc_html_e( 'Connect to Mediagraph', 'mediagraph-picker' ); ?>
+                    <?php esc_html_e( 'Connect to Mediagraph', 'mediagraph-assets' ); ?>
                 </a>
             </p>
 
@@ -347,7 +347,7 @@ class Mediagraph_Settings {
         check_admin_referer( 'mediagraph_disconnect', 'mediagraph_disconnect_nonce' );
 
         if ( ! current_user_can( 'manage_options' ) ) {
-            wp_die( esc_html__( 'You do not have sufficient permissions.', 'mediagraph-picker' ) );
+            wp_die( esc_html__( 'You do not have sufficient permissions.', 'mediagraph-assets' ) );
         }
 
         $oauth = new Mediagraph_OAuth();
@@ -364,7 +364,7 @@ class Mediagraph_Settings {
         check_admin_referer( 'mediagraph_switch_org', 'mediagraph_switch_org_nonce' );
 
         if ( ! current_user_can( 'manage_options' ) ) {
-            wp_die( esc_html__( 'You do not have sufficient permissions.', 'mediagraph-picker' ) );
+            wp_die( esc_html__( 'You do not have sufficient permissions.', 'mediagraph-assets' ) );
         }
 
         $organization_id = isset( $_POST['organization_id'] ) ? intval( $_POST['organization_id'] ) : 0;
@@ -388,7 +388,7 @@ class Mediagraph_Settings {
         check_admin_referer( 'mediagraph_test_connection', 'mediagraph_test_nonce' );
 
         if ( ! current_user_can( 'manage_options' ) ) {
-            wp_die( esc_html__( 'You do not have sufficient permissions.', 'mediagraph-picker' ) );
+            wp_die( esc_html__( 'You do not have sufficient permissions.', 'mediagraph-assets' ) );
         }
 
         $api = new Mediagraph_API();
