@@ -337,6 +337,7 @@ const MediaPicker = ({ editorId }) => {
           assetId: asset.id,
           assetGuid: asset.guid || '',
           assetUrl: downloadUrl,
+          attachmentId: attachmentId,
           assetTitle: metadata.title || asset.title || asset.filename,
           assetHtml: mediaHtml,
           assetType: assetType,

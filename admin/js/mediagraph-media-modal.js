@@ -316,63 +316,10 @@
                     if (response.success) {
                         var attachmentId = response.data.attachment_id;
 
-                        // Fetch the new attachment
+                        // Fetch the new attachment model
                         var attachment = wp.media.attachment(attachmentId);
                         attachment.fetch().then(function() {
-                            // Try to find a state with a selection
-                            // Common state names: 'library', 'insert', 'featured-image', 'gallery'
-                            var stateNames = ['library', 'insert', 'featured-image', 'gallery', 'embed'];
-                            var targetState = null;
-                            var selection = null;
-
-                            // First, check if controller has a selection directly
-                            if (controller.state() && controller.state().get('selection')) {
-                                targetState = controller.state();
-                                selection = targetState.get('selection');
-                            } else {
-                                // Try to find a state with selection
-                                for (var i = 0; i < stateNames.length; i++) {
-                                    try {
-                                        var state = controller.state(stateNames[i]);
-                                        if (state && state.get('selection')) {
-                                            targetState = state;
-                                            selection = state.get('selection');
-                                            break;
-                                        }
-                                    } catch (e) {
-                                        // State doesn't exist, continue
-                                    }
-                                }
-                            }
-
-                            if (selection) {
-                                // Add attachment to selection
-                                selection.reset([attachment]);
-
-                                // Switch to the target state if different from current
-                                if (targetState && targetState.id && controller.state().id !== targetState.id) {
-                                    controller.setState(targetState.id);
-                                }
-
-                                // Trigger selection change to update UI
-                                selection.trigger('selection:single');
-
-                                // Show visual feedback - mark the asset as selected
-                                $('.mediagraph-modal-asset').removeClass('selected');
-                                $('.mediagraph-modal-asset[data-asset-id="' + asset.id + '"]').addClass('selected');
-                            } else {
-                                // Fallback: Just switch to library view to show the new item
-                                // and let the user select it manually
-                                try {
-                                    controller.setState('library');
-                                } catch (e) {
-                                    // If library state doesn't exist, just close
-                                    controller.close();
-                                }
-
-                                // Alert user where to find their image
-                                alert('Image uploaded successfully! You can find it in the Media Library tab.');
-                            }
+                            self.handleAttachmentReady(controller, attachment, asset);
                         }).fail(function() {
                             alert('Error loading the uploaded attachment. Please select it from the Media Library tab.');
                         });
@@ -387,6 +334,80 @@
                     $('.mediagraph-modal-asset').removeClass('loading');
                 }
             });
+        },
+
+        /**
+         * Handle a successfully downloaded and fetched attachment.
+         * Determines the correct state to switch to and sets the selection.
+         */
+        handleAttachmentReady: function(controller, attachment, asset) {
+            // Use _lastState to determine where the user came from before
+            // switching to the Mediagraph tab. This correctly handles:
+            // - "Set Featured Image" flow (_lastState = 'featured-image')
+            // - "Add Media" / "Insert Media" flow (_lastState = 'insert' or 'library')
+            var previousStateId = controller._lastState;
+            var targetState = null;
+            var selection = null;
+
+            // First, try to return to the previous state
+            if (previousStateId) {
+                try {
+                    targetState = controller.state(previousStateId);
+                    if (targetState && typeof targetState.get === 'function') {
+                        selection = targetState.get('selection');
+                    }
+                    if (!selection) {
+                        targetState = null;
+                    }
+                } catch (e) {
+                    targetState = null;
+                }
+            }
+
+            // Fallback: try common states in order
+            if (!selection) {
+                var fallbackStates = ['library', 'insert', 'featured-image', 'gallery'];
+                for (var i = 0; i < fallbackStates.length; i++) {
+                    try {
+                        var state = controller.state(fallbackStates[i]);
+                        if (state && typeof state.get === 'function') {
+                            var sel = state.get('selection');
+                            if (sel) {
+                                targetState = state;
+                                selection = sel;
+                                break;
+                            }
+                        }
+                    } catch (e) {
+                        // State doesn't exist, continue
+                    }
+                }
+            }
+
+            if (selection) {
+                // Set the attachment as the selection
+                selection.reset([attachment]);
+
+                // Switch to the target state
+                if (targetState.id && controller.state().id !== targetState.id) {
+                    controller.setState(targetState.id);
+                }
+
+                // Trigger selection change to update toolbar buttons
+                selection.trigger('selection:single');
+
+                // Visual feedback in the Mediagraph tab
+                $('.mediagraph-modal-asset').removeClass('selected');
+                $('.mediagraph-modal-asset[data-asset-id="' + asset.id + '"]').addClass('selected');
+            } else {
+                // Last resort: switch to library if possible
+                try {
+                    controller.setState('library');
+                } catch (e) {
+                    controller.close();
+                }
+                alert('Image uploaded successfully! You can find it in the Media Library tab.');
+            }
         },
 
         showError: function(message) {

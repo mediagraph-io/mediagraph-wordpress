@@ -1,6 +1,6 @@
 {
   "name": "mediagraph-assets",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "WordPress plugin for integrating Mediagraph media asset management",
   "main": "admin/js/src/index.jsx",
   "scripts": {

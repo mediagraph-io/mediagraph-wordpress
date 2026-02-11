@@ -1,21 +1,25 @@
 /**
- * Mediagraph Image Block Extension
+ * Mediagraph Block Extensions
  *
- * Adds a "Mediagraph" button to the toolbar of the core/image block,
- * allowing users to replace images with assets from Mediagraph.
+ * Adds a "Mediagraph" toolbar button to supported native blocks
+ * (Image, Gallery, Cover, Media & Text), allowing users to insert
+ * Mediagraph assets that are downloaded to the WP Media Library
+ * with proper attachment IDs.
  */
 
 (function(wp) {
     'use strict';
 
-    const { addFilter } = wp.hooks;
-    const { createHigherOrderComponent } = wp.compose;
-    const { Fragment, createElement: el } = wp.element;
-    const { BlockControls } = wp.blockEditor;
-    const { ToolbarGroup, ToolbarButton } = wp.components;
+    var addFilter = wp.hooks.addFilter;
+    var createHigherOrderComponent = wp.compose.createHigherOrderComponent;
+    var Fragment = wp.element.Fragment;
+    var el = wp.element.createElement;
+    var BlockControls = wp.blockEditor.BlockControls;
+    var ToolbarGroup = wp.components.ToolbarGroup;
+    var ToolbarButton = wp.components.ToolbarButton;
 
     // Mediagraph icon as SVG
-    const mediagraphIcon = el('svg', {
+    var mediagraphIcon = el('svg', {
         width: 20,
         height: 20,
         viewBox: '0 0 486.45 486.45',
@@ -30,72 +34,107 @@
     );
 
     /**
-     * Higher-order component that adds Mediagraph button to image block toolbar
+     * Configuration map for supported block types.
+     * Each entry defines how to apply a Mediagraph asset to that block.
      */
-    const withMediagraphButton = createHigherOrderComponent(function(BlockEdit) {
+    var SUPPORTED_BLOCKS = {
+        'core/image': {
+            label: 'Replace with Mediagraph Asset',
+            applyAsset: function(props, attrs) {
+                props.setAttributes({
+                    id: attrs.attachmentId || undefined,
+                    url: attrs.assetUrl,
+                    alt: attrs.altText || '',
+                    title: attrs.title || '',
+                    caption: attrs.description || ''
+                });
+            }
+        },
+        'core/cover': {
+            label: 'Replace with Mediagraph Asset',
+            applyAsset: function(props, attrs) {
+                props.setAttributes({
+                    id: attrs.attachmentId || undefined,
+                    url: attrs.assetUrl,
+                    alt: attrs.altText || ''
+                });
+            }
+        },
+        'core/media-text': {
+            label: 'Replace with Mediagraph Asset',
+            applyAsset: function(props, attrs) {
+                var isVideo = attrs.assetType === 'video';
+                props.setAttributes({
+                    mediaId: attrs.attachmentId || undefined,
+                    mediaUrl: attrs.assetUrl,
+                    mediaAlt: attrs.altText || '',
+                    mediaType: isVideo ? 'video' : 'image'
+                });
+            }
+        },
+        'core/gallery': {
+            label: 'Add from Mediagraph',
+            applyAsset: function(props, attrs) {
+                // Modern galleries (WP 5.9+) use inner blocks
+                if (wp.data && wp.blocks) {
+                    var dispatch = wp.data.dispatch('core/block-editor');
+                    var select = wp.data.select('core/block-editor');
+                    var block = select.getBlock(props.clientId);
+                    var innerBlocks = block ? block.innerBlocks : [];
+
+                    var newImageBlock = wp.blocks.createBlock('core/image', {
+                        id: attrs.attachmentId || undefined,
+                        url: attrs.assetUrl,
+                        alt: attrs.altText || '',
+                        caption: attrs.description || ''
+                    });
+
+                    dispatch.insertBlock(newImageBlock, innerBlocks.length, props.clientId);
+                }
+            }
+        }
+    };
+
+    /**
+     * Get the block config if it's a supported block.
+     */
+    function getBlockConfig(blockName) {
+        return SUPPORTED_BLOCKS[blockName] || null;
+    }
+
+    /**
+     * Higher-order component that adds Mediagraph button to supported block toolbars.
+     */
+    var withMediagraphButton = createHigherOrderComponent(function(BlockEdit) {
         return function(props) {
-            // Only add to core/image block
-            if (props.name !== 'core/image') {
+            var blockConfig = getBlockConfig(props.name);
+
+            if (!blockConfig) {
                 return el(BlockEdit, props);
             }
 
-            // Check if Mediagraph is connected
             var isConnected = window.mediagraphPicker && window.mediagraphPicker.isConnected;
 
-            /**
-             * Open Mediagraph picker and handle asset selection
-             */
             function openMediagraphPicker() {
                 if (!window.MediagraphPicker) {
                     console.error('Mediagraph picker not available');
                     return;
                 }
 
-                // Store reference to this block for asset insertion
-                window.mediagraphImageBlockTarget = {
-                    clientId: props.clientId,
-                    setAttributes: props.setAttributes,
-                    attributes: props.attributes
-                };
-
-                // Open the picker
-                window.MediagraphPicker.open();
-
-                // Listen for asset selection
-                var originalInsert = window.mediagraphCurrentBlock;
+                // Set up the callback for asset selection.
+                // The React picker downloads the asset to the WP Media Library,
+                // then calls setAttributes with the attachment ID and URL.
                 window.mediagraphCurrentBlock = {
-                    setAttributes: function(attrs) {
-                        // Update the core/image block with Mediagraph asset
-                        props.setAttributes({
-                            url: attrs.assetUrl,
-                            alt: attrs.altText || '',
-                            title: attrs.title || '',
-                            caption: attrs.description || ''
-                        });
-
-                        // Store Mediagraph metadata for write-back
-                        if (attrs.assetId) {
-                            var postMeta = window._mediagraphAssets || [];
-                            postMeta.push({
-                                id: attrs.assetId,
-                                guid: attrs.assetGuid || '',
-                                usage_type: 'body_photo',
-                                metadata: {
-                                    title: attrs.title || '',
-                                    description: attrs.description || '',
-                                    alt_text: attrs.altText || ''
-                                }
-                            });
-                            window._mediagraphAssets = postMeta;
-                        }
-
-                        // Clean up
-                        window.mediagraphImageBlockTarget = null;
-                    },
                     isGutenbergBlock: true,
-                    targetBlockType: 'core/image',
-                    clientId: props.clientId
+                    targetBlockType: props.name,
+                    clientId: props.clientId,
+                    setAttributes: function(attrs) {
+                        blockConfig.applyAsset(props, attrs);
+                        window.mediagraphCurrentBlock = null;
+                    }
                 };
+
+                window.MediagraphPicker.open();
             }
 
             return el(Fragment, {},
@@ -104,7 +143,7 @@
                     el(ToolbarGroup, {},
                         el(ToolbarButton, {
                             icon: mediagraphIcon,
-                            label: 'Replace with Mediagraph Asset',
+                            label: blockConfig.label,
                             onClick: openMediagraphPicker
                         })
                     )
@@ -113,10 +152,10 @@
         };
     }, 'withMediagraphButton');
 
-    // Add the filter to extend block controls
+    // Register the filter
     addFilter(
         'editor.BlockEdit',
-        'mediagraph/image-block-extension',
+        'mediagraph/block-extension',
         withMediagraphButton
     );
 
