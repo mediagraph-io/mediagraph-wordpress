@@ -43,7 +43,7 @@
 
     /**
      * Custom Mediagraph content view
-     * This mounts the React picker inside the media modal
+     * This mounts the full React picker inside the media modal
      */
     wp.media.view.Mediagraph = wp.media.View.extend({
         className: 'mediagraph-modal-content',
@@ -77,6 +77,16 @@
             return this;
         },
 
+        // Unmount the React tree when the view is removed so we don't leak roots
+        // each time the user reopens the media modal or switches tabs.
+        remove: function() {
+            if (this.pickerHandle && typeof this.pickerHandle.unmount === 'function') {
+                this.pickerHandle.unmount();
+                this.pickerHandle = null;
+            }
+            wp.media.View.prototype.remove.apply(this, arguments);
+        },
+
         mountReactPicker: function() {
             var self = this;
             var container = document.getElementById('mediagraph-media-modal-picker');
@@ -96,242 +106,32 @@
                 return;
             }
 
-            // Create inline picker UI
-            this.createInlinePicker(container);
-        },
-
-        createInlinePicker: function(container) {
-            var self = this;
-
-            // Create simplified picker interface
-            container.innerHTML =
-                '<div class="mediagraph-inline-picker">' +
-                    '<div class="mediagraph-inline-header">' +
-                        '<div class="mediagraph-search-container">' +
-                            '<input type="text" id="mediagraph-modal-search" placeholder="Search assets..." />' +
-                            '<button type="button" class="button" id="mediagraph-modal-search-btn">Search</button>' +
-                        '</div>' +
-                        '<div class="mediagraph-sort-container">' +
-                            '<select id="mediagraph-modal-sort">' +
-                                '<option value="created_at_desc">Newest First</option>' +
-                                '<option value="created_at_asc">Oldest First</option>' +
-                                '<option value="filename_asc">Filename (A-Z)</option>' +
-                                '<option value="filename_desc">Filename (Z-A)</option>' +
-                            '</select>' +
-                        '</div>' +
-                    '</div>' +
-                    '<div class="mediagraph-inline-body">' +
-                        '<div id="mediagraph-modal-assets" class="mediagraph-modal-assets">' +
-                            '<div class="mediagraph-modal-loading"><span class="spinner is-active"></span></div>' +
-                        '</div>' +
-                    '</div>' +
-                    '<div class="mediagraph-inline-footer">' +
-                        '<div id="mediagraph-modal-pagination" class="mediagraph-modal-pagination"></div>' +
-                    '</div>' +
-                '</div>';
-
-            // Bind events
-            $('#mediagraph-modal-search').on('keypress', function(e) {
-                if (e.which === 13) {
-                    self.searchAssets();
-                }
-            });
-
-            $('#mediagraph-modal-search-btn').on('click', function() {
-                self.searchAssets();
-            });
-
-            $('#mediagraph-modal-sort').on('change', function() {
-                self.searchAssets();
-            });
-
-            // Load initial assets
-            this.searchAssets();
-        },
-
-        searchAssets: function(page) {
-            var self = this;
-            var query = $('#mediagraph-modal-search').val() || '';
-            var sort = $('#mediagraph-modal-sort').val() || 'created_at_desc';
-            var sortParts = sort.match(/^(.+)_(asc|desc)$/);
-            var sortField = sortParts ? sortParts[1] : sort;
-            var sortOrder = sortParts ? sortParts[2] : 'desc';
-            page = page || 1;
-
-            $('#mediagraph-modal-assets').html('<div class="mediagraph-modal-loading"><span class="spinner is-active"></span></div>');
-
-            $.ajax({
-                url: window.mediagraphPicker.ajaxUrl,
-                method: 'POST',
-                data: {
-                    action: 'mediagraph_search_assets',
-                    nonce: window.mediagraphPicker.nonce,
-                    q: query,
-                    sort: sortField,
-                    order: sortOrder,
-                    page: page,
-                    per_page: 40
-                },
-                success: function(response) {
-                    if (response.success) {
-                        self.renderAssets(response.data.assets || [], response.data.total || 0, page);
-                    } else {
-                        self.showError(response.data?.message || 'Failed to load assets');
-                    }
-                },
-                error: function() {
-                    self.showError('Network error loading assets');
-                }
-            });
-        },
-
-        renderAssets: function(assets, total, currentPage) {
-            var self = this;
-            var container = $('#mediagraph-modal-assets');
-            var apiBaseUrl = window.mediagraphPicker.apiBaseUrl || '';
-
-            if (!assets || assets.length === 0) {
-                container.html('<div class="mediagraph-no-assets">No assets found</div>');
+            // Mount the same full-featured React picker (sidebar tree, filters, search,
+            // detail modal) used by the Gutenberg block flow. The picker downloads the
+            // selected asset to the WP media library and hands the attachment back via
+            // onAssetReady; we then drive the WP media frame's selection model.
+            if (!window.MediagraphPicker || typeof window.MediagraphPicker.mountInline !== 'function') {
+                container.innerHTML =
+                    '<div class="mediagraph-error">' +
+                        'Mediagraph picker bundle did not load. Try a hard refresh.' +
+                    '</div>';
                 return;
             }
 
-            var html = '<div class="mediagraph-asset-grid">';
+            // Clear loading placeholder before React takes over.
+            container.innerHTML = '';
 
-            assets.forEach(function(asset) {
-                var thumbUrl = asset.thumb_url || asset.grid_url || '';
-                // Resolve relative URLs
-                if (thumbUrl && !thumbUrl.startsWith('http')) {
-                    thumbUrl = apiBaseUrl.replace(/\/$/, '') + thumbUrl;
-                }
-
-                var isRestricted = !asset.downloadable;
-                var isVideo = asset.type === 'Video' || (asset.mime_type && asset.mime_type.startsWith('video/'));
-                var isAudio = asset.type === 'Audio' || (asset.mime_type && asset.mime_type.startsWith('audio/'));
-
-                html += '<div class="mediagraph-modal-asset' + (isRestricted ? ' restricted' : '') + '" data-asset-id="' + asset.id + '">';
-
-                if (isVideo) {
-                    html += '<div class="mediagraph-asset-thumb video-thumb">';
-                    if (thumbUrl) {
-                        html += '<img src="' + thumbUrl + '" alt="" />';
+            this.pickerHandle = window.MediagraphPicker.mountInline(container, {
+                onAssetReady: function(asset, payload) {
+                    if (!payload || !payload.attachmentId) {
+                        return;
                     }
-                    html += '<span class="asset-type-badge">VIDEO</span>';
-                    html += '</div>';
-                } else if (isAudio) {
-                    html += '<div class="mediagraph-asset-thumb audio-thumb">';
-                    html += '<span class="dashicons dashicons-format-audio"></span>';
-                    html += '<span class="asset-type-badge">AUDIO</span>';
-                    html += '</div>';
-                } else {
-                    html += '<div class="mediagraph-asset-thumb">';
-                    if (thumbUrl) {
-                        html += '<img src="' + thumbUrl + '" alt="" loading="lazy" />';
-                    } else {
-                        html += '<span class="dashicons dashicons-format-image"></span>';
-                    }
-                    html += '</div>';
-                }
-
-                html += '<div class="mediagraph-asset-name">' + (asset.filename || 'Untitled') + '</div>';
-
-                if (isRestricted) {
-                    html += '<span class="restricted-badge" title="Not downloadable">Restricted</span>';
-                }
-
-                html += '</div>';
-            });
-
-            html += '</div>';
-            container.html(html);
-
-            // Bind click handlers
-            container.find('.mediagraph-modal-asset:not(.restricted)').on('click', function() {
-                var assetId = $(this).data('asset-id');
-                var asset = assets.find(function(a) { return a.id == assetId; });
-                if (asset) {
-                    self.selectAsset(asset);
-                }
-            });
-
-            // Render pagination
-            this.renderPagination(total, currentPage);
-        },
-
-        renderPagination: function(total, currentPage) {
-            var self = this;
-            var perPage = 40;
-            var totalPages = Math.ceil(total / perPage);
-
-            if (totalPages <= 1) {
-                $('#mediagraph-modal-pagination').html('');
-                return;
-            }
-
-            var html = '<span class="pagination-info">' + total + ' assets</span>';
-            html += '<div class="pagination-buttons">';
-
-            if (currentPage > 1) {
-                html += '<button type="button" class="button page-btn" data-page="' + (currentPage - 1) + '">&laquo; Previous</button>';
-            }
-
-            html += '<span class="page-indicator">Page ' + currentPage + ' of ' + totalPages + '</span>';
-
-            if (currentPage < totalPages) {
-                html += '<button type="button" class="button page-btn" data-page="' + (currentPage + 1) + '">Next &raquo;</button>';
-            }
-
-            html += '</div>';
-            $('#mediagraph-modal-pagination').html(html);
-
-            // Bind pagination
-            $('.page-btn').on('click', function() {
-                self.searchAssets($(this).data('page'));
-            });
-        },
-
-        selectAsset: function(asset) {
-            var self = this;
-            var controller = this.controller;
-
-            // Show loading state
-            $('.mediagraph-modal-asset[data-asset-id="' + asset.id + '"]').addClass('loading');
-
-            // Download asset to WordPress media library
-            $.ajax({
-                url: window.mediagraphPicker.ajaxUrl,
-                method: 'POST',
-                data: {
-                    action: 'mediagraph_download_asset',
-                    nonce: window.mediagraphPicker.nonce,
-                    asset_id: asset.id,
-                    size: 'full',
-                    metadata: JSON.stringify({
-                        title: asset.title || asset.filename,
-                        description: asset.description || '',
-                        alt_text: asset.alt_text || '',
-                        caption: asset.description || ''
-                    })
-                },
-                success: function(response) {
-                    if (response.success) {
-                        var attachmentId = response.data.attachment_id;
-
-                        // Fetch the new attachment model
-                        var attachment = wp.media.attachment(attachmentId);
-                        attachment.fetch().then(function() {
-                            self.handleAttachmentReady(controller, attachment, asset);
-                        }).fail(function() {
-                            alert('Error loading the uploaded attachment. Please select it from the Media Library tab.');
-                        });
-                    } else {
-                        alert('Error: ' + (response.data?.message || 'Failed to download asset'));
-                    }
-                },
-                error: function() {
-                    alert('Network error downloading asset');
-                },
-                complete: function() {
-                    $('.mediagraph-modal-asset').removeClass('loading');
+                    var attachment = wp.media.attachment(payload.attachmentId);
+                    attachment.fetch().then(function() {
+                        self.handleAttachmentReady(self.controller, attachment, asset);
+                    }).fail(function() {
+                        alert('Error loading the uploaded attachment. Please select it from the Media Library tab.');
+                    });
                 }
             });
         },
@@ -408,10 +208,6 @@
                 }
                 alert('Image uploaded successfully! You can find it in the Media Library tab.');
             }
-        },
-
-        showError: function(message) {
-            $('#mediagraph-modal-assets').html('<div class="mediagraph-error">' + message + '</div>');
         }
     });
 

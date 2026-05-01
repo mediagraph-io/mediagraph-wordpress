@@ -74,7 +74,7 @@ window.mediagraphBuildHtml = function(url, metadata, displaySettings, assetType 
   return html;
 };
 
-const MediaPicker = ({ editorId }) => {
+const MediaPicker = ({ editorId, inline = false, onAssetReady = null }) => {
   // State management
   const [isOpen, setIsOpen] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
@@ -330,6 +330,21 @@ const MediaPicker = ({ editorId }) => {
       const isAudio = asset.type === 'Audio' || asset.mime_type?.startsWith('audio/');
       const assetType = isVideo ? 'video' : isAudio ? 'audio' : 'image';
 
+      // Inline host (e.g. WP media modal) handles selection itself
+      if (onAssetReady) {
+        onAssetReady(asset, {
+          attachmentId,
+          url: downloadUrl,
+          assetType,
+          metadata,
+          displaySettings,
+          html: mediaHtml,
+        });
+        storeAssetMetadata(asset, metadata, displaySettings);
+        setSelectedAsset(null);
+        return;
+      }
+
       // Check if this was opened from a Gutenberg block
       if (window.mediagraphCurrentBlock && window.mediagraphCurrentBlock.setAttributes) {
         // Update Gutenberg block attributes
@@ -482,13 +497,17 @@ const MediaPicker = ({ editorId }) => {
     return null;
   }
 
-  // Don't render if closed
-  if (!isOpen) {
+  // Don't render if closed (only applies to fullscreen modal mode; inline host controls visibility)
+  if (!isOpen && !inline) {
     return null;
   }
 
+  const wrapperProps = inline
+    ? { className: 'mediagraph-picker-inline' }
+    : { id: 'mediagraph-picker-modal', className: 'active' };
+
   return (
-    <div id="mediagraph-picker-modal" className="active">
+    <div {...wrapperProps}>
       <div className="mediagraph-picker-content">
           {/* Header */}
           <div className="mediagraph-picker-header">
@@ -510,13 +529,15 @@ const MediaPicker = ({ editorId }) => {
                 )}
               </h2>
             </div>
-            <button
-              className="mediagraph-picker-close"
-              onClick={handleClose}
-              aria-label="Close"
-            >
-              ×
-            </button>
+            {!inline && (
+              <button
+                className="mediagraph-picker-close"
+                onClick={handleClose}
+                aria-label="Close"
+              >
+                ×
+              </button>
+            )}
           </div>
 
           {/* Search Bar */}

@@ -45,6 +45,42 @@ document.addEventListener('DOMContentLoaded', () => {
       if (pickerRoot) {
         pickerRoot.render(null);
       }
+    },
+
+    /**
+     * Mount the picker inline inside an arbitrary container (e.g. the WP media modal's
+     * Mediagraph tab). The host supplies onAssetReady to receive the downloaded
+     * attachment and apply its own selection logic.
+     *
+     * @param {HTMLElement} container DOM node to mount into
+     * @param {Object}      options
+     * @param {Function}    options.onAssetReady  (asset, { attachmentId, url, assetType, metadata, displaySettings, html }) => void
+     * @returns {{ unmount: Function }}
+     */
+    mountInline: (container, options = {}) => {
+      if (!container) {
+        console.error('Mediagraph picker: mountInline requires a container element');
+        return { unmount: () => {} };
+      }
+
+      const root = createRoot(container);
+      root.render(
+        <MediaPicker
+          inline
+          onAssetReady={options.onAssetReady || null}
+          key={Date.now()}
+        />
+      );
+
+      return {
+        unmount: () => {
+          try {
+            root.unmount();
+          } catch (e) {
+            // Container already gone; ignore
+          }
+        }
+      };
     }
   };
 

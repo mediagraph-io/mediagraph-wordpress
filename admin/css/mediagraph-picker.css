@@ -950,3 +950,38 @@
   color: #666;
   font-size: 13px;
 }
+
+/* Inline mount (e.g. WP media modal "Mediagraph" tab) — fills the host container
+   instead of using fixed positioning. */
+.mediagraph-picker-inline {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+}
+
+.mediagraph-picker-inline > .mediagraph-picker-content {
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.mediagraph-modal-content {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.mediagraph-media-modal-picker {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
