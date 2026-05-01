@@ -5,7 +5,7 @@
 
 set -e
 
-VERSION="1.4.0"
+VERSION="1.4.1"
 PLUGIN_SLUG="mediagraph-assets"
 BUILD_DIR="build"
 RELEASE_DIR="releases"

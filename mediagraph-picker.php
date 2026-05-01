@@ -3,7 +3,7 @@
  * Plugin Name: Mediagraph Assets
  * Plugin URI: https://www.mediagraph.io/wordpress-plugin
  * Description: Integrates Mediagraph's media asset management system into WordPress media library. Browse, search, and insert assets from Mediagraph Collections, Storage Folders, and Lightboxes.
- * Version: 1.4.0
+ * Version: 1.4.1
  * Author: Mediagraph
  * Author URI: https://www.mediagraph.io
  * License: GPL-2.0+
@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Define plugin constants
-define( 'MEDIAGRAPH_PICKER_VERSION', '1.4.0' );
+define( 'MEDIAGRAPH_PICKER_VERSION', '1.4.1' );
 define( 'MEDIAGRAPH_PICKER_PLUGIN_FILE', __FILE__ );
 define( 'MEDIAGRAPH_PICKER_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'MEDIAGRAPH_PICKER_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
