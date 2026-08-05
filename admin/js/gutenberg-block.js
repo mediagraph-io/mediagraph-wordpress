@@ -2,7 +2,122 @@
     const { registerBlockType } = wp.blocks;
     const { Button, ToolbarButton, ToolbarGroup, PanelBody, TextControl, TextareaControl, SelectControl } = wp.components;
     const { useBlockProps, BlockControls, InspectorControls, RichText } = wp.blockEditor;
-    const { createElement: el, useEffect, useRef } = wp.element;
+    const { createElement: el, useEffect, useRef, useState } = wp.element;
+
+    /**
+     * Collect the metadata/display-settings shapes the HTML builder expects
+     */
+    function metadataFrom( attributes ) {
+        return {
+            title: attributes.title,
+            byline: attributes.byline,
+            headline: attributes.headline,
+            description: attributes.description,
+            alt_text: attributes.altText,
+            extended_description: attributes.extendedDescription,
+            keywords: attributes.keywords,
+            usage_rights: attributes.usageRights
+        };
+    }
+
+    function displaySettingsFrom( attributes ) {
+        return {
+            alignment: attributes.alignment,
+            linkTo: attributes.linkTo,
+            size: attributes.size
+        };
+    }
+
+    function alignmentClassFrom( attributes ) {
+        return attributes.alignment && attributes.alignment !== 'none'
+            ? 'align' + attributes.alignment
+            : undefined;
+    }
+
+    const blockAttributes = {
+        assetId: {
+            type: 'number'
+        },
+        assetGuid: {
+            type: 'string',
+            default: ''
+        },
+        assetUrl: {
+            type: 'string'
+        },
+        assetTitle: {
+            type: 'string'
+        },
+        assetHtml: {
+            type: 'string'
+        },
+        assetType: {
+            type: 'string',
+            default: ''
+        },
+        attachmentId: {
+            type: 'number'
+        },
+        posterUrl: {
+            type: 'string',
+            default: ''
+        },
+        // Metadata fields
+        title: {
+            type: 'string',
+            default: ''
+        },
+        byline: {
+            type: 'string',
+            default: ''
+        },
+        headline: {
+            type: 'string',
+            default: ''
+        },
+        description: {
+            type: 'string',
+            default: ''
+        },
+        altText: {
+            type: 'string',
+            default: ''
+        },
+        extendedDescription: {
+            type: 'string',
+            default: ''
+        },
+        keywords: {
+            type: 'string',
+            default: ''
+        },
+        usageRights: {
+            type: 'string',
+            default: ''
+        },
+        // Display settings
+        alignment: {
+            type: 'string',
+            default: 'none'
+        },
+        linkTo: {
+            type: 'string',
+            default: 'none'
+        },
+        size: {
+            type: 'string',
+            default: 'full'
+        },
+        // Legacy - for backwards compatibility
+        metadata: {
+            type: 'object',
+            default: {}
+        },
+        displaySettings: {
+            type: 'object',
+            default: {}
+        }
+    };
 
     registerBlockType('mediagraph/asset-picker', {
         apiVersion: 2,
@@ -21,91 +136,21 @@
             )
         ),
         category: 'media',
-        attributes: {
-            assetId: {
-                type: 'string'
-            },
-            assetGuid: {
-                type: 'string',
-                default: ''
-            },
-            assetUrl: {
-                type: 'string'
-            },
-            assetTitle: {
-                type: 'string'
-            },
-            assetHtml: {
-                type: 'string'
-            },
-            assetType: {
-                type: 'string',
-                default: ''
-            },
-            posterUrl: {
-                type: 'string',
-                default: ''
-            },
-            // Metadata fields
-            title: {
-                type: 'string',
-                default: ''
-            },
-            byline: {
-                type: 'string',
-                default: ''
-            },
-            headline: {
-                type: 'string',
-                default: ''
-            },
-            description: {
-                type: 'string',
-                default: ''
-            },
-            altText: {
-                type: 'string',
-                default: ''
-            },
-            extendedDescription: {
-                type: 'string',
-                default: ''
-            },
-            keywords: {
-                type: 'string',
-                default: ''
-            },
-            usageRights: {
-                type: 'string',
-                default: ''
-            },
-            // Display settings
-            alignment: {
-                type: 'string',
-                default: 'none'
-            },
-            linkTo: {
-                type: 'string',
-                default: 'none'
-            },
-            size: {
-                type: 'string',
-                default: 'medium'
-            },
-            // Legacy - for backwards compatibility
-            metadata: {
-                type: 'object',
-                default: {}
-            },
-            displaySettings: {
-                type: 'object',
-                default: {}
-            }
-        },
+        attributes: blockAttributes,
         edit: function(props) {
             const { attributes, setAttributes } = props;
-            const blockProps = useBlockProps();
+            const alignClass = alignmentClassFrom(attributes);
+            const blockProps = useBlockProps({ className: alignClass });
             const hasOpenedPicker = useRef(false);
+            const [ isResizing, setIsResizing ] = useState(false);
+            const [ resizeError, setResizeError ] = useState(null);
+
+            // Always read the freshest attributes. Handlers (and async callbacks)
+            // capture the attributes object from the render that created them, so
+            // reading `attributes` directly would rebuild the HTML from the value
+            // the control had *before* the change.
+            const attributesRef = useRef(attributes);
+            attributesRef.current = attributes;
 
             function openMediagraphPicker() {
                 // Store the current block's setAttributes function globally
@@ -113,7 +158,13 @@
                     setAttributes: setAttributes,
                     clientId: props.clientId,
                     // Flag to indicate this is a Gutenberg block
-                    isGutenbergBlock: true
+                    isGutenbergBlock: true,
+                    // Editing context, so the picker can skip a re-download when
+                    // the size is unchanged
+                    editingAssetId: attributes.assetId,
+                    editingAttachmentId: attributes.attachmentId,
+                    editingDisplaySettings: displaySettingsFrom(attributes),
+                    assetUrl: attributes.assetUrl
                 };
 
                 // Trigger the existing Mediagraph modal
@@ -128,32 +179,55 @@
                 }
             }
 
-            // Rebuild HTML when metadata or display settings change
-            function rebuildAssetHtml() {
-                if (!attributes.assetUrl) return;
+            // Apply attribute changes and rebuild the saved HTML from the new
+            // values in the same update
+            function updateAttributes(changes) {
+                const next = Object.assign({}, attributesRef.current, changes);
+                const patch = Object.assign({}, changes);
 
-                const metadata = {
-                    title: attributes.title,
-                    byline: attributes.byline,
-                    headline: attributes.headline,
-                    description: attributes.description,
-                    alt_text: attributes.altText,
-                    extended_description: attributes.extendedDescription,
-                    keywords: attributes.keywords,
-                    usage_rights: attributes.usageRights
-                };
-
-                const displaySettings = {
-                    alignment: attributes.alignment,
-                    linkTo: attributes.linkTo,
-                    size: attributes.size
-                };
-
-                // Call the global HTML builder if available
-                if (window.mediagraphBuildHtml) {
-                    const newHtml = window.mediagraphBuildHtml(attributes.assetUrl, metadata, displaySettings, attributes.assetType, attributes.posterUrl);
-                    setAttributes({ assetHtml: newHtml });
+                if (next.assetUrl && window.mediagraphBuildHtml) {
+                    patch.assetHtml = window.mediagraphBuildHtml(
+                        next.assetUrl,
+                        metadataFrom(next),
+                        displaySettingsFrom(next),
+                        next.assetType,
+                        next.posterUrl
+                    );
                 }
+
+                setAttributes(patch);
+            }
+
+            // Changing the size means re-downloading the asset at that size and
+            // pointing the block at the new attachment
+            function changeSize(size) {
+                const assetId = attributesRef.current.assetId;
+                if (size === attributesRef.current.size) {
+                    return;
+                }
+
+                if (!assetId || typeof window.mediagraphDownloadAsset !== 'function') {
+                    setResizeError('This asset cannot be resized.');
+                    return;
+                }
+
+                setIsResizing(true);
+                setResizeError(null);
+
+                window.mediagraphDownloadAsset(assetId, size, metadataFrom(attributesRef.current))
+                    .then(function(result) {
+                        updateAttributes({
+                            size: size,
+                            assetUrl: result.url,
+                            attachmentId: result.attachmentId
+                        });
+                    })
+                    .catch(function(err) {
+                        setResizeError(err.message);
+                    })
+                    .finally(function() {
+                        setIsResizing(false);
+                    });
             }
 
             // Automatically open picker when block is first inserted
@@ -187,67 +261,43 @@
                             el(TextControl, {
                                 label: 'Title',
                                 value: attributes.title,
-                                onChange: (value) => {
-                                    setAttributes({ title: value });
-                                    setTimeout(rebuildAssetHtml, 0);
-                                }
+                                onChange: (value) => updateAttributes({ title: value })
                             }),
                             el(TextControl, {
                                 label: 'Byline',
                                 value: attributes.byline,
-                                onChange: (value) => {
-                                    setAttributes({ byline: value });
-                                    setTimeout(rebuildAssetHtml, 0);
-                                }
+                                onChange: (value) => updateAttributes({ byline: value })
                             }),
                             el(TextControl, {
                                 label: 'Headline',
                                 value: attributes.headline,
-                                onChange: (value) => {
-                                    setAttributes({ headline: value });
-                                    setTimeout(rebuildAssetHtml, 0);
-                                }
+                                onChange: (value) => updateAttributes({ headline: value })
                             }),
                             el(TextareaControl, {
                                 label: 'Description',
                                 value: attributes.description,
-                                onChange: (value) => {
-                                    setAttributes({ description: value });
-                                    setTimeout(rebuildAssetHtml, 0);
-                                }
+                                onChange: (value) => updateAttributes({ description: value })
                             }),
                             el(TextControl, {
                                 label: 'Alt Text',
                                 value: attributes.altText,
-                                onChange: (value) => {
-                                    setAttributes({ altText: value });
-                                    setTimeout(rebuildAssetHtml, 0);
-                                }
+                                onChange: (value) => updateAttributes({ altText: value })
                             }),
                             el(TextareaControl, {
                                 label: 'Extended Description',
                                 value: attributes.extendedDescription,
-                                onChange: (value) => {
-                                    setAttributes({ extendedDescription: value });
-                                    setTimeout(rebuildAssetHtml, 0);
-                                }
+                                onChange: (value) => updateAttributes({ extendedDescription: value })
                             }),
                             el(TextControl, {
                                 label: 'Keywords',
                                 value: attributes.keywords,
                                 placeholder: 'Comma-separated',
-                                onChange: (value) => {
-                                    setAttributes({ keywords: value });
-                                    setTimeout(rebuildAssetHtml, 0);
-                                }
+                                onChange: (value) => updateAttributes({ keywords: value })
                             }),
                             el(TextareaControl, {
                                 label: 'Usage Rights',
                                 value: attributes.usageRights,
-                                onChange: (value) => {
-                                    setAttributes({ usageRights: value });
-                                    setTimeout(rebuildAssetHtml, 0);
-                                }
+                                onChange: (value) => updateAttributes({ usageRights: value })
                             })
                         ),
                         // Display Settings Panel
@@ -261,10 +311,7 @@
                                     { label: 'Center', value: 'center' },
                                     { label: 'Right', value: 'right' }
                                 ],
-                                onChange: (value) => {
-                                    setAttributes({ alignment: value });
-                                    setTimeout(rebuildAssetHtml, 0);
-                                }
+                                onChange: (value) => updateAttributes({ alignment: value })
                             }),
                             el(SelectControl, {
                                 label: 'Link To',
@@ -274,31 +321,28 @@
                                     { label: 'Media File', value: 'media' },
                                     { label: 'Attachment Page', value: 'attachment' }
                                 ],
-                                onChange: (value) => {
-                                    setAttributes({ linkTo: value });
-                                    setTimeout(rebuildAssetHtml, 0);
-                                }
+                                onChange: (value) => updateAttributes({ linkTo: value })
                             }),
                             el(SelectControl, {
                                 label: 'Size',
                                 value: attributes.size,
+                                disabled: isResizing,
+                                help: isResizing
+                                    ? 'Downloading asset at the new size…'
+                                    : (resizeError ? 'Could not change size: ' + resizeError : undefined),
                                 options: [
                                     { label: 'Thumbnail', value: 'thumbnail' },
                                     { label: 'Medium', value: 'medium' },
                                     { label: 'Large', value: 'large' },
                                     { label: 'Full Size', value: 'full' }
                                 ],
-                                onChange: (value) => {
-                                    setAttributes({ size: value });
-                                    // Size change requires re-download
-                                    // TODO: Implement re-download logic
-                                }
+                                onChange: changeSize
                             })
                         )
                     ),
                     // Show the asset with inline-editable caption
                     el('figure', {
-                        className: 'wp-block-mediagraph-asset' + (attributes.alignment && attributes.alignment !== 'none' ? ' align' + attributes.alignment : '')
+                        className: 'wp-block-mediagraph-asset' + (alignClass ? ' ' + alignClass : '')
                     },
                         // Render the media element directly
                         attributes.assetType === 'video'
@@ -324,10 +368,7 @@
                         el(RichText, {
                             tagName: 'figcaption',
                             value: attributes.description,
-                            onChange: (value) => {
-                                setAttributes({ description: value });
-                                setTimeout(rebuildAssetHtml, 0);
-                            },
+                            onChange: (value) => updateAttributes({ description: value }),
                             placeholder: 'Add caption...',
                             className: 'wp-element-caption'
                         })
@@ -360,14 +401,37 @@
         save: function(props) {
             const { attributes } = props;
 
-            // In the saved content, just output the raw HTML
-            if (attributes.assetHtml) {
-                return el('div', {
-                    dangerouslySetInnerHTML: { __html: attributes.assetHtml }
-                });
+            if (!attributes.assetHtml) {
+                return null;
             }
 
-            return null;
-        }
+            // Alignment goes on the block wrapper as well as inside assetHtml, so
+            // themes keying off the block element pick it up
+            const blockProps = useBlockProps.save({
+                className: alignmentClassFrom(attributes)
+            });
+
+            return el('div', Object.assign({}, blockProps, {
+                dangerouslySetInnerHTML: { __html: attributes.assetHtml }
+            }));
+        },
+        deprecated: [
+            {
+                // v1 emitted a bare <div> with no block class and no alignment.
+                // Kept so existing posts don't fail block validation.
+                attributes: blockAttributes,
+                save: function(props) {
+                    const { attributes } = props;
+
+                    if (attributes.assetHtml) {
+                        return el('div', {
+                            dangerouslySetInnerHTML: { __html: attributes.assetHtml }
+                        });
+                    }
+
+                    return null;
+                }
+            }
+        ]
     });
 })(window.wp);

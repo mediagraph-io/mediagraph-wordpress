@@ -25,13 +25,89 @@ const resolveUrl = (url) => {
 };
 
 /**
- * Static HTML builder for Gutenberg blocks to use
+ * Get current post ID from WordPress editor
+ */
+const getCurrentPostId = () => {
+  // Try Gutenberg first
+  if (window.wp && window.wp.data && window.wp.data.select) {
+    try {
+      const postId = window.wp.data.select('core/editor')?.getCurrentPostId();
+      if (postId) return postId;
+    } catch (e) {
+      // Not in Gutenberg editor
+    }
+  }
+
+  // Try Classic Editor from URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const postParam = urlParams.get('post');
+  if (postParam) return parseInt(postParam, 10);
+
+  // Try global pagenow
+  if (window.pagenow === 'post' && window.typenow) {
+    const postId = urlParams.get('post');
+    if (postId) return parseInt(postId, 10);
+  }
+
+  return 0;
+};
+
+/**
+ * Download an asset into the WordPress media library at a given size
+ *
+ * Exposed globally so Gutenberg blocks can re-download when the size setting
+ * changes without reopening the picker.
+ */
+window.mediagraphDownloadAsset = async function(assetId, size, metadata = {}) {
+  const { ajaxUrl, nonce } = window.mediagraphPicker || {};
+
+  const response = await fetch(ajaxUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: new URLSearchParams({
+      action: 'mediagraph_download_asset',
+      nonce: nonce,
+      asset_id: assetId,
+      size: size || 'original',
+      post_id: getCurrentPostId().toString(),
+      metadata: JSON.stringify(metadata),
+    }),
+  });
+
+  const data = await response.json();
+
+  if (!data.success) {
+    throw new Error(data.data?.message || 'Failed to download asset');
+  }
+
+  return { url: data.data.url, attachmentId: data.data.attachment_id };
+};
+
+/**
+ * Static HTML builder, shared by the picker and by Gutenberg blocks
  * This is exposed globally so blocks can rebuild HTML when settings change
  */
 window.mediagraphBuildHtml = function(url, metadata, displaySettings, assetType = null, posterUrl = null) {
-  const { alignment, linkTo } = displaySettings;
-  const isVideo = assetType === 'video' || (url && url.match(/\.(mp4|mov|avi|webm)$/i));
-  const isAudio = assetType === 'audio' || (url && url.match(/\.(mp3|wav|ogg)$/i));
+  const { alignment, linkTo, size } = displaySettings || {};
+  const isVideo = assetType === 'video' || (!assetType && url && url.match(/\.(mp4|mov|avi|webm)$/i));
+  const isAudio = assetType === 'audio' || (!assetType && url && url.match(/\.(mp3|wav|ogg)$/i));
+
+  const hasCaption = !!metadata.description;
+  const alignClass = alignment && alignment !== 'none' ? `align${alignment}` : '';
+  const sizeClass = size && !isVideo && !isAudio ? `size-${size}` : '';
+  const hasLink = !isVideo && !isAudio && linkTo && linkTo !== 'none';
+
+  // With a caption the <figure> is the outermost element, so alignment belongs
+  // there — floating the inner element can't move the figure around it.
+  // `mediagraph-asset` marks whichever element ends up outermost so the
+  // stylesheet can align it when there's no block wrapper (classic editor).
+  const mediaClasses = [
+    hasCaption || hasLink ? '' : 'mediagraph-asset',
+    hasCaption || hasLink ? '' : alignClass,
+    sizeClass,
+  ].filter(Boolean).join(' ');
 
   let html = '';
 
@@ -40,15 +116,15 @@ window.mediagraphBuildHtml = function(url, metadata, displaySettings, assetType 
     if (posterUrl) {
       html += ` poster="${posterUrl}"`;
     }
-    if (alignment && alignment !== 'none') {
-      html += ` class="align${alignment}"`;
+    if (mediaClasses) {
+      html += ` class="${mediaClasses}"`;
     }
     html += ' style="max-width: 100%;">';
     html += '</video>';
   } else if (isAudio) {
     html = `<audio src="${url}" controls`;
-    if (alignment && alignment !== 'none') {
-      html += ` class="align${alignment}"`;
+    if (mediaClasses) {
+      html += ` class="${mediaClasses}"`;
     }
     html += ' style="max-width: 100%;">';
     html += '</audio>';
@@ -57,18 +133,20 @@ window.mediagraphBuildHtml = function(url, metadata, displaySettings, assetType 
     if (metadata.title) {
       html += ` title="${metadata.title}"`;
     }
-    if (alignment && alignment !== 'none') {
-      html += ` class="align${alignment}"`;
+    if (mediaClasses) {
+      html += ` class="${mediaClasses}"`;
     }
     html += ' />';
 
-    if (linkTo && linkTo !== 'none') {
-      html = `<a href="${url}">${html}</a>`;
+    if (hasLink) {
+      const linkClasses = hasCaption ? '' : ['mediagraph-asset', alignClass].filter(Boolean).join(' ');
+      html = `<a href="${url}"${linkClasses ? ` class="${linkClasses}"` : ''}>${html}</a>`;
     }
   }
 
-  if (metadata.description) {
-    html = `<figure>${html}<figcaption>${metadata.description}</figcaption></figure>`;
+  if (hasCaption) {
+    const figureClasses = ['wp-caption', 'mediagraph-asset', alignClass].filter(Boolean).join(' ');
+    html = `<figure class="${figureClasses}">${html}<figcaption class="wp-element-caption">${metadata.description}</figcaption></figure>`;
   }
 
   return html;
@@ -104,34 +182,6 @@ const MediaPicker = ({ editorId, inline = false, onAssetReady = null }) => {
   // Get localized data from WordPress
   const pickerData = window.mediagraphPicker || {};
   const { ajaxUrl, nonce, isConnected } = pickerData;
-
-  /**
-   * Get current post ID from WordPress editor
-   */
-  const getCurrentPostId = () => {
-    // Try Gutenberg first
-    if (window.wp && window.wp.data && window.wp.data.select) {
-      try {
-        const postId = window.wp.data.select('core/editor')?.getCurrentPostId();
-        if (postId) return postId;
-      } catch (e) {
-        // Not in Gutenberg editor
-      }
-    }
-
-    // Try Classic Editor from URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const postParam = urlParams.get('post');
-    if (postParam) return parseInt(postParam, 10);
-
-    // Try global pagenow
-    if (window.pagenow === 'post' && window.typenow) {
-      const postId = urlParams.get('post');
-      if (postId) return parseInt(postId, 10);
-    }
-
-    return 0;
-  };
 
   // Load asset groups on mount
   useEffect(() => {
@@ -279,9 +329,6 @@ const MediaPicker = ({ editorId, inline = false, onAssetReady = null }) => {
    */
   const handleAssetInsert = async (asset, metadata, displaySettings) => {
     try {
-      // Get current post ID
-      const postId = getCurrentPostId();
-
       // Check if we're editing and size hasn't changed
       const isEditing = window.mediagraphCurrentBlock?.editingAssetId === asset.id;
       const previousSize = window.mediagraphCurrentBlock?.editingDisplaySettings?.size;
@@ -292,43 +339,33 @@ const MediaPicker = ({ editorId, inline = false, onAssetReady = null }) => {
 
       // Only re-download if size changed or it's a new asset
       if (sizeChanged) {
-        // Download asset to WordPress media library
-        const response = await fetch(ajaxUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-          body: new URLSearchParams({
-            action: 'mediagraph_download_asset',
-            nonce: nonce,
-            asset_id: asset.id,
-            size: displaySettings.size || 'original',
-            post_id: postId.toString(),
-            metadata: JSON.stringify(metadata),
-          }),
-        });
+        const downloaded = await window.mediagraphDownloadAsset(
+          asset.id,
+          displaySettings.size,
+          metadata
+        );
 
-        const data = await response.json();
-
-        if (!data.success) {
-          throw new Error(data.data?.message || 'Failed to download asset');
-        }
-
-        downloadUrl = data.data.url;
-        attachmentId = data.data.attachment_id;
+        downloadUrl = downloaded.url;
+        attachmentId = downloaded.attachmentId;
       } else {
         // Reuse existing URL if size hasn't changed
         downloadUrl = window.mediagraphCurrentBlock.assetUrl || asset.url;
-        attachmentId = null; // We don't have the attachment ID, but it's not needed for updates
+        attachmentId = window.mediagraphCurrentBlock.editingAttachmentId || null;
       }
-
-      // Build media HTML (image or video)
-      const mediaHtml = buildMediaHtml(asset, downloadUrl, metadata, displaySettings);
 
       // Determine asset type for Gutenberg block
       const isVideo = asset.type === 'Video' || asset.mime_type?.startsWith('video/');
       const isAudio = asset.type === 'Audio' || asset.mime_type?.startsWith('audio/');
       const assetType = isVideo ? 'video' : isAudio ? 'audio' : 'image';
+
+      // Build media HTML (image or video)
+      const mediaHtml = window.mediagraphBuildHtml(
+        downloadUrl,
+        metadata,
+        displaySettings,
+        assetType,
+        resolveUrl(asset.preview_image_url)
+      );
 
       // Inline host (e.g. WP media modal) handles selection itself
       if (onAssetReady) {
@@ -369,7 +406,7 @@ const MediaPicker = ({ editorId, inline = false, onAssetReady = null }) => {
           // Save display settings individually
           alignment: displaySettings.alignment || 'none',
           linkTo: displaySettings.linkTo || 'none',
-          size: displaySettings.size || 'medium',
+          size: displaySettings.size || 'full',
           // Keep legacy objects for backwards compatibility
           metadata: metadata,
           displaySettings: displaySettings
@@ -398,69 +435,6 @@ const MediaPicker = ({ editorId, inline = false, onAssetReady = null }) => {
       setError('Failed to insert asset: ' + err.message);
       throw err; // Re-throw so AssetDetail can handle the loading state
     }
-  };
-
-  /**
-   * Build HTML for media insertion (image or video)
-   */
-  const buildMediaHtml = (asset, url, metadata, displaySettings) => {
-    const { alignment, linkTo, size } = displaySettings;
-    const isVideo = asset.type === 'Video' || asset.mime_type?.startsWith('video/');
-    const isAudio = asset.type === 'Audio' || asset.mime_type?.startsWith('audio/');
-
-    let html = '';
-
-    if (isVideo) {
-      // Build video element
-      html = `<video src="${url}" controls`;
-
-      const posterUrl = resolveUrl(asset.preview_image_url);
-      if (posterUrl) {
-        html += ` poster="${posterUrl}"`;
-      }
-
-      if (alignment && alignment !== 'none') {
-        html += ` class="align${alignment}"`;
-      }
-
-      html += ' style="max-width: 100%;">';
-      html += '</video>';
-    } else if (isAudio) {
-      // Build audio element
-      html = `<audio src="${url}" controls`;
-
-      if (alignment && alignment !== 'none') {
-        html += ` class="align${alignment}"`;
-      }
-
-      html += ' style="max-width: 100%;">';
-      html += '</audio>';
-    } else {
-      // Build image element
-      html = `<img src="${url}" alt="${metadata.alt_text || ''}"`;
-
-      if (metadata.title) {
-        html += ` title="${metadata.title}"`;
-      }
-
-      if (alignment && alignment !== 'none') {
-        html += ` class="align${alignment}"`;
-      }
-
-      html += ' />';
-
-      // Wrap in link if specified (images only)
-      if (linkTo && linkTo !== 'none') {
-        html = `<a href="${url}">${html}</a>`;
-      }
-    }
-
-    // Add caption if description is specified
-    if (metadata.description) {
-      html = `<figure>${html}<figcaption>${metadata.description}</figcaption></figure>`;
-    }
-
-    return html;
   };
 
   /**
@@ -593,6 +567,11 @@ const MediaPicker = ({ editorId, inline = false, onAssetReady = null }) => {
             onInsert={handleAssetInsert}
             ajaxUrl={ajaxUrl}
             nonce={nonce}
+            initialDisplaySettings={
+              window.mediagraphCurrentBlock?.editingAssetId === selectedAsset.id
+                ? window.mediagraphCurrentBlock.editingDisplaySettings
+                : null
+            }
           />
         )}
       </div>

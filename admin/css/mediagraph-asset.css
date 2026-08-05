@@ -1,0 +1,83 @@
+/**
+ * Front-end + editor styles for Mediagraph assets.
+ *
+ * WordPress core only ships the legacy float classes globally:
+ *
+ *   .alignleft  { float: left;  margin-right: 2em; }
+ *   .alignright { float: right; margin-left: 2em; }
+ *   .aligncenter { clear: both; }
+ *
+ * Note that `.aligncenter` gets no centering at all — core scopes that to
+ * individual blocks (`.wp-block-image.aligncenter { display: table }` plus auto
+ * margins). Block themes such as Twenty Twenty-Five add nothing further, so
+ * without these rules the Center option silently does nothing while Left and
+ * Right appear to work.
+ */
+
+/* Block wrapper owns the alignment when inserted via the Gutenberg block. */
+.wp-block-mediagraph-asset-picker.alignleft {
+    display: table;
+    float: left;
+    margin-right: 2em;
+}
+
+.wp-block-mediagraph-asset-picker.alignright {
+    display: table;
+    float: right;
+    margin-left: 2em;
+}
+
+.wp-block-mediagraph-asset-picker.aligncenter {
+    display: table;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/*
+ * The media element inside the block carries its own align class as well, so the
+ * same HTML works when inserted into the classic editor. Inside the block the
+ * wrapper is already handling it — neutralise the inner copy so the two don't
+ * compound.
+ */
+.wp-block-mediagraph-asset-picker > .alignleft,
+.wp-block-mediagraph-asset-picker > .alignright,
+.wp-block-mediagraph-asset-picker > .aligncenter,
+.wp-block-mediagraph-asset-picker > a > .alignleft,
+.wp-block-mediagraph-asset-picker > a > .alignright,
+.wp-block-mediagraph-asset-picker > a > .aligncenter {
+    float: none;
+    margin-left: 0;
+    margin-right: 0;
+}
+
+/*
+ * Classic editor / media modal insertions have no block wrapper, so the align
+ * class sits directly on the image or figure. An inline <img> ignores auto
+ * margins, which is why centering needs an explicit display here.
+ */
+img.mediagraph-asset.aligncenter,
+video.mediagraph-asset.aligncenter,
+audio.mediagraph-asset.aligncenter {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+a.mediagraph-asset.aligncenter,
+figure.mediagraph-asset.aligncenter {
+    display: table;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+figure.mediagraph-asset,
+a.mediagraph-asset {
+    max-width: 100%;
+}
+
+figure.mediagraph-asset > img,
+figure.mediagraph-asset > a > img,
+a.mediagraph-asset > img {
+    max-width: 100%;
+    height: auto;
+}

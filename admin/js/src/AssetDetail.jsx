@@ -18,7 +18,7 @@ const resolveUrl = (url) => {
   return apiBaseUrl ? `${apiBaseUrl.replace(/\/$/, '')}${url}` : url;
 };
 
-const AssetDetail = ({ asset, onClose, onInsert, ajaxUrl, nonce }) => {
+const AssetDetail = ({ asset, onClose, onInsert, ajaxUrl, nonce, initialDisplaySettings = null }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isInserting, setIsInserting] = useState(false);
   const [error, setError] = useState(null);
@@ -36,11 +36,13 @@ const AssetDetail = ({ asset, onClose, onInsert, ajaxUrl, nonce }) => {
     usage_rights: '',
   });
 
-  // Display settings
+  // Display settings — seeded from the block being edited, if any, so reopening
+  // the picker doesn't silently reset alignment/size
   const [displaySettings, setDisplaySettings] = useState({
     alignment: 'none',
     linkTo: 'none',
-    size: 'medium',
+    size: 'full',
+    ...(initialDisplaySettings || {}),
   });
 
   // Load full asset details on mount

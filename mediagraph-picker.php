@@ -120,6 +120,10 @@ class Mediagraph_Picker {
         add_action( 'init', array( $this, 'register_gutenberg_block' ) );
         add_action( 'enqueue_block_editor_assets', array( $this, 'enqueue_block_editor_assets' ) );
 
+        // Asset styles, loaded on the front end and inside the editor
+        add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_asset_styles' ) );
+        add_action( 'enqueue_block_assets', array( $this, 'enqueue_asset_styles' ) );
+
         // AJAX handlers
         add_action( 'wp_ajax_mediagraph_get_asset_groups', array( $this, 'ajax_get_asset_groups' ) );
         add_action( 'wp_ajax_mediagraph_get_asset_group_children', array( $this, 'ajax_get_asset_group_children' ) );
@@ -468,7 +472,7 @@ class Mediagraph_Picker {
         }
 
         // Download asset to media library and associate with post
-        $attachment_id = $this->api->download_to_media_library( $asset_id, $metadata, $post_id );
+        $attachment_id = $this->api->download_to_media_library( $asset_id, $metadata, $post_id, $size );
 
         if ( is_wp_error( $attachment_id ) ) {
             wp_send_json_error( array( 'message' => $attachment_id->get_error_message() ) );
@@ -656,12 +660,50 @@ class Mediagraph_Picker {
 
     /**
      * Render Gutenberg block on frontend
+     *
+     * This is a dynamic block, so WordPress ignores the markup produced by the
+     * block's save() and renders whatever this returns. The wrapper (and its
+     * alignment class) therefore has to be reproduced here, or alignment would
+     * only ever apply inside the editor.
      */
     public function render_gutenberg_block( $attributes ) {
-        if ( isset( $attributes['assetHtml'] ) ) {
-            return $attributes['assetHtml'];
+        if ( empty( $attributes['assetHtml'] ) ) {
+            return '';
         }
-        return '';
+
+        // get_block_wrapper_attributes() adds the generated
+        // wp-block-mediagraph-asset-picker class. Preserve the legacy class as
+        // well for themes that may already target it.
+        $classes = 'wp-block-mediagraph-asset';
+
+        $alignment = isset( $attributes['alignment'] ) ? $attributes['alignment'] : 'none';
+        if ( $alignment && 'none' !== $alignment ) {
+            $classes .= ' align' . sanitize_html_class( $alignment );
+        }
+
+        $wrapper_attributes = get_block_wrapper_attributes( array( 'class' => $classes ) );
+
+        return sprintf(
+            '<div %1$s>%2$s</div>',
+            $wrapper_attributes,
+            $attributes['assetHtml']
+        );
+    }
+
+    /**
+     * Enqueue styles for inserted Mediagraph assets
+     *
+     * Loaded on the front end and inside the editor. Core only ships the legacy
+     * float rules globally; `.aligncenter` gets `clear: both` and no centering,
+     * so alignment needs styles of our own.
+     */
+    public function enqueue_asset_styles() {
+        wp_enqueue_style(
+            'mediagraph-asset',
+            MEDIAGRAPH_PICKER_PLUGIN_URL . 'admin/css/mediagraph-asset.css',
+            array(),
+            MEDIAGRAPH_PICKER_VERSION
+        );
     }
 
     /**

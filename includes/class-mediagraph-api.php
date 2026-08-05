@@ -481,14 +481,100 @@ class Mediagraph_API {
     }
 
     /**
+     * Build a WordPress sideload file array from the downloaded rendition.
+     *
+     * Preview renditions may not share the original asset's extension or MIME
+     * type (for example, a TIFF or video thumbnail may be delivered as JPEG).
+     * WordPress validates the filename against the file contents, so describe
+     * the downloaded bytes rather than blindly reusing the original metadata.
+     *
+     * @param string $original_filename Original asset filename.
+     * @param string $original_mime     Original asset MIME type.
+     * @param string $download_url      Selected rendition URL.
+     * @param string $temp_file         Downloaded temporary file path.
+     * @return array Sideload-compatible file data.
+     */
+    private function build_sideload_file_data( $original_filename, $original_mime, $download_url, $temp_file ) {
+        $filename = sanitize_file_name( $original_filename );
+        $url_path = wp_parse_url( $download_url, PHP_URL_PATH );
+        $url_extension = $url_path ? strtolower( pathinfo( rawurldecode( $url_path ), PATHINFO_EXTENSION ) ) : '';
+        $url_extension = preg_replace( '/[^a-z0-9]+/', '', $url_extension );
+
+        $current_filetype = wp_check_filetype( $filename );
+        $url_filetype = $url_extension ? wp_check_filetype( 'rendition.' . $url_extension ) : array();
+        $mime_type = '';
+
+        if ( function_exists( 'wp_get_image_mime' ) ) {
+            $mime_type = wp_get_image_mime( $temp_file );
+        }
+
+        if ( ! $mime_type && function_exists( 'mime_content_type' ) ) {
+            $mime_type = mime_content_type( $temp_file );
+            if ( 'application/octet-stream' === $mime_type ) {
+                $mime_type = '';
+            }
+        }
+
+        if ( ! $mime_type && ! empty( $url_filetype['type'] ) ) {
+            $mime_type = $url_filetype['type'];
+        }
+
+        if ( ! $mime_type ) {
+            $mime_type = $original_mime ? $original_mime : $current_filetype['type'];
+        }
+
+        // Keep the original extension when it already matches the bytes. When
+        // it does not, prefer the rendition URL's extension and finally the
+        // first WordPress-registered extension for the detected MIME type.
+        $extension = '';
+        if ( $mime_type && $current_filetype['type'] === $mime_type ) {
+            $extension = pathinfo( $filename, PATHINFO_EXTENSION );
+        } elseif ( $mime_type && ! empty( $url_filetype['type'] ) && $url_filetype['type'] === $mime_type ) {
+            $extension = $url_extension;
+        } elseif ( $mime_type ) {
+            $extension = $this->get_extension_for_mime_type( $mime_type );
+        } elseif ( $url_extension ) {
+            $extension = $url_extension;
+        }
+
+        if ( $extension ) {
+            $basename = pathinfo( $filename, PATHINFO_FILENAME );
+            $filename = sanitize_file_name( $basename . '.' . $extension );
+        }
+
+        return array(
+            'name'     => $filename,
+            'tmp_name' => $temp_file,
+            'type'     => $mime_type,
+        );
+    }
+
+    /**
+     * Return a WordPress-registered extension for a MIME type.
+     *
+     * @param string $mime_type MIME type.
+     * @return string File extension, or an empty string when unknown.
+     */
+    private function get_extension_for_mime_type( $mime_type ) {
+        foreach ( wp_get_mime_types() as $extensions => $registered_mime ) {
+            if ( $registered_mime === $mime_type ) {
+                return explode( '|', $extensions )[0];
+            }
+        }
+
+        return '';
+    }
+
+    /**
      * Download asset to WordPress media library
      *
      * @param string $asset_id Asset ID
      * @param array  $metadata Optional metadata
      * @param int    $post_id  Optional post ID to associate attachment with
+     * @param string $size     Size variant to download (original, large, medium, thumbnail)
      * @return int|WP_Error Attachment ID or error
      */
-    public function download_to_media_library( $asset_id, $metadata = array(), $post_id = 0 ) {
+    public function download_to_media_library( $asset_id, $metadata = array(), $post_id = 0, $size = 'original' ) {
         // Get asset details to get the proper filename
         $asset = $this->get_asset( $asset_id );
 
@@ -506,8 +592,8 @@ class Mediagraph_API {
             return new WP_Error( 'no_filename', __( 'Could not determine filename for asset', 'mediagraph-assets' ) );
         }
 
-        // Get download URL
-        $download_url = $this->get_download_url( $asset_id );
+        // Get download URL for the requested size variant
+        $download_url = $this->get_download_url( $asset_id, $size );
 
         if ( is_wp_error( $download_url ) ) {
             return $download_url;
@@ -520,29 +606,16 @@ class Mediagraph_API {
             return $temp_file;
         }
 
-        // Get mime type from filename or asset
-        $mime_type = null;
-        if ( isset( $asset['mime_type'] ) ) {
-            $mime_type = $asset['mime_type'];
-        } else {
-            // Try to determine from file extension
-            $wp_filetype = wp_check_filetype( $filename );
-            if ( $wp_filetype['type'] ) {
-                $mime_type = $wp_filetype['type'];
-            }
-        }
-
-        // Prepare file array for upload with correct filename
-        $file_array = array(
-            'name'     => $filename,
-            'tmp_name' => $temp_file,
-            'type'     => $mime_type,
-        );
-
-        // Sideload into media library and associate with post
         require_once( ABSPATH . 'wp-admin/includes/image.php' );
         require_once( ABSPATH . 'wp-admin/includes/file.php' );
         require_once( ABSPATH . 'wp-admin/includes/media.php' );
+
+        $file_array = $this->build_sideload_file_data(
+            $filename,
+            isset( $asset['mime_type'] ) ? $asset['mime_type'] : '',
+            $download_url,
+            $temp_file
+        );
 
         // Determine caption: prefer explicit caption, fall back to description
         $caption = '';
