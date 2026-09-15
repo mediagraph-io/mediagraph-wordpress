@@ -1,0 +1,6 @@
+# Built output — minified, not source.
+admin/js/dist/
+
+node_modules/
+build/
+releases/

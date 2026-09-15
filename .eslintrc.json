@@ -1,17 +1,51 @@
 {
-  "extends": ["react-app"],
+  "root": true,
   "env": {
     "browser": true,
-    "es6": true,
-    "jquery": true
+    "es2021": true,
+    "jquery": true,
+    "jest": true
+  },
+  "parserOptions": {
+    "ecmaVersion": 2021,
+    "sourceType": "module",
+    "ecmaFeatures": {
+      "jsx": true
+    }
+  },
+  "plugins": [ "react", "react-hooks" ],
+  "extends": [ "eslint:recommended", "plugin:react/recommended", "plugin:react-hooks/recommended" ],
+  "settings": {
+    "react": {
+      "version": "18.0",
+      "pragma": "createElement"
+    }
   },
   "globals": {
     "wp": "readonly",
-    "mediagraphPicker": "readonly",
-    "jQuery": "readonly"
+    "jQuery": "readonly",
+    "mediagraphSettings": "readonly",
+    "createElement": "readonly",
+    "Fragment": "readonly"
   },
   "rules": {
-    "no-console": "warn",
-    "react/prop-types": "off"
-  }
+    "no-console": [ "warn", { "allow": [ "warn", "error" ] } ],
+    "react/prop-types": "off",
+    "react/react-in-jsx-scope": "off",
+    "eqeqeq": [ "error", "smart" ],
+    "prefer-const": "error",
+    "no-unused-vars": [ "error", { "argsIgnorePattern": "^_" } ],
+    "no-mixed-spaces-and-tabs": [ "error", "smart-tabs" ]
+  },
+  "overrides": [
+    {
+      "files": [ "admin/js/__tests__/**/*.js" ],
+      "env": { "node": true, "jest": true }
+    },
+    {
+      "files": [ "admin/js/blocks/*.js", "admin/js/*.js" ],
+      "parserOptions": { "sourceType": "script" },
+      "rules": { "react-hooks/rules-of-hooks": "off" }
+    }
+  ]
 }

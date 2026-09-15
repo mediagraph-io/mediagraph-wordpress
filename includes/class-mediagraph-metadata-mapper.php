@@ -1,300 +1,264 @@
 <?php
 /**
- * Mediagraph Metadata Mapper Base Class
+ * Base metadata mapper.
  *
- * Abstract base class for platform-specific metadata mappers.
- * Each mapper handles converting platform-specific article data
- * into Mediagraph's expected schema format.
+ * Converts a WordPress post plus its Mediagraph usages into the payload the
+ * /api/published_assets endpoint expects.
  *
- * @package MediagraphPicker
+ * @package MediagraphAssets
  */
 
-// Exit if accessed directly
 if ( ! defined( 'ABSPATH' ) ) {
-    exit;
+	exit;
 }
 
 /**
- * Abstract metadata mapper class
+ * Shared mapping behaviour.
  */
 abstract class Mediagraph_Metadata_Mapper {
 
-    /**
-     * Build publish metadata payload
-     *
-     * @param WP_Post $post              Post object
-     * @param array   $mediagraph_assets Assets used in post
-     * @return array Metadata payload
-     */
-    abstract public function build_publish_payload( $post, $mediagraph_assets );
+	/**
+	 * Build the full payload.
+	 *
+	 * @param WP_Post $post   Post object.
+	 * @param array   $assets Usage records.
+	 * @return array
+	 */
+	public function build_publish_payload( $post, array $assets ) {
+		$article = array_merge(
+			$this->publisher_properties(),
+			$this->article_properties( $post )
+		);
 
-    /**
-     * Get publisher properties
-     *
-     * @return array Publisher data
-     */
-    protected function get_publisher_properties() {
-        $site_url = get_site_url();
-        $site_name = get_bloginfo( 'name' );
+		$images = array();
+		$videos = array();
 
-        return array(
-            'publisher_uid'    => $this->generate_publisher_uid(),
-            'publisher_name'   => $site_name,
-            'publication_name' => $site_name,
-            'edition'          => $this->get_edition(),
-        );
-    }
+		foreach ( $assets as $asset ) {
+			$record = $this->published_asset_record( $asset, $post );
 
-    /**
-     * Generate publisher UID
-     *
-     * @return string Publisher UID
-     */
-    protected function generate_publisher_uid() {
-        // Use site URL hash as consistent UID
-        return 'wp_' . md5( get_site_url() );
-    }
+			if ( ! empty( $asset['is_video'] ) ) {
+				$videos[] = $record;
+			}
 
-    /**
-     * Get edition (can be overridden by platform)
-     *
-     * @return string Edition identifier
-     */
-    protected function get_edition() {
-        return 'online';
-    }
+			// published_images is the only collection the API currently
+			// processes, so time-based media goes here too. Without this,
+			// every video and audio usage is silently dropped.
+			$images[] = $record;
+		}
 
-    /**
-     * Generate article UID
-     *
-     * @param WP_Post $post Post object
-     * @return string Article UID
-     */
-    protected function generate_article_uid( $post ) {
-        return $this->generate_publisher_uid() . '_post_' . $post->ID;
-    }
+		// Nest the article fields under `published_asset` explicitly rather
+		// than relying on Rails' ParamsWrapper to do it. The wrapper key is
+		// derived from the controller and cached, and under dev-mode class
+		// reloading it can come back as the parent controller's key ("api")
+		// instead of "published_asset" — which makes the endpoint reject the
+		// request with "param is missing: published_asset". Sending the key
+		// ourselves is correct either way, because ParamsWrapper skips
+		// wrapping when the key is already present.
+		$payload = array(
+			'published_asset'  => $article,
+			'published_images' => $images,
+			'published_videos' => $videos,
+		);
 
-    /**
-     * Get article properties from post
-     *
-     * @param WP_Post $post Post object
-     * @return array Article data
-     */
-    protected function get_article_properties( $post ) {
-        $article_url = get_permalink( $post->ID );
-        $publish_date = get_the_date( 'c', $post->ID );
+		/**
+		 * Filter the write-back payload before it is sent.
+		 *
+		 * @param array   $payload Payload.
+		 * @param WP_Post $post    Post object.
+		 * @param array   $assets  Usage records.
+		 */
+		return apply_filters( 'mediagraph_publish_payload', $payload, $post, $assets );
+	}
 
-        // Get post author
-        $author = get_userdata( $post->post_author );
-        $byline = $author ? $author->display_name : '';
+	/**
+	 * Stable identifier for this WordPress site.
+	 *
+	 * @return string
+	 */
+	protected function publisher_uid() {
+		return 'wp_' . md5( get_site_url() );
+	}
 
-        // Get excerpt or generate from content
-        $abstract = has_excerpt( $post->ID ) ? get_the_excerpt( $post->ID ) : wp_trim_words( $post->post_content, 55, '...' );
+	/**
+	 * Stable identifier for a post.
+	 *
+	 * @param WP_Post $post Post object.
+	 * @return string
+	 */
+	protected function article_uid( $post ) {
+		return $this->publisher_uid() . '_post_' . $post->ID;
+	}
 
-        return array(
-            'article_uid'        => $this->generate_article_uid( $post ),
-            'article_name'       => get_the_title( $post->ID ),
-            'publication_urls'   => array( $article_url ),
-            'publication_date'   => $publish_date,
-            'headline'           => get_the_title( $post->ID ),
-            'subhead'            => $this->get_subhead( $post ),
-            'byline'             => $byline,
-            'abstract'           => $abstract,
-            'article_text'       => $this->prepare_article_text( $post->post_content ),
-            'published_images'   => array(),
-            'published_videos'   => array(),
-        );
-    }
+	/**
+	 * Publisher-level fields.
+	 *
+	 * @return array
+	 */
+	protected function publisher_properties() {
+		$site_name = get_bloginfo( 'name' );
 
-    /**
-     * Get subhead (can be overridden by platform)
-     *
-     * @param WP_Post $post Post object
-     * @return string Subhead
-     */
-    protected function get_subhead( $post ) {
-        // Check for common subhead meta fields
-        $subhead_fields = array( 'subheading', 'subtitle', 'deck' );
+		return array(
+			'publisher_uid'    => $this->publisher_uid(),
+			'publisher_name'   => $site_name,
+			'publication_name' => $site_name,
+			'edition'          => $this->edition(),
+		);
+	}
 
-        foreach ( $subhead_fields as $field ) {
-            $value = get_post_meta( $post->ID, $field, true );
-            if ( ! empty( $value ) ) {
-                return $value;
-            }
-        }
+	/**
+	 * Edition identifier.
+	 *
+	 * @return string
+	 */
+	protected function edition() {
+		return 'online';
+	}
 
-        return '';
-    }
+	/**
+	 * Article-level fields.
+	 *
+	 * @param WP_Post $post Post object.
+	 * @return array
+	 */
+	protected function article_properties( $post ) {
+		$author = get_userdata( $post->post_author );
 
-    /**
-     * Prepare article text (strip HTML, clean up)
-     *
-     * @param string $content Post content
-     * @return string Cleaned article text
-     */
-    protected function prepare_article_text( $content ) {
-        // Strip shortcodes
-        $content = strip_shortcodes( $content );
+		return array(
+			'article_uid'      => $this->article_uid( $post ),
+			'article_name'     => get_the_title( $post->ID ),
+			'publication_urls' => array( get_permalink( $post->ID ) ),
+			'publication_date' => get_the_date( 'c', $post->ID ),
+			'headline'         => get_the_title( $post->ID ),
+			'subhead'          => $this->subhead( $post ),
+			'byline'           => $author ? $author->display_name : '',
+			'abstract'         => $this->abstract( $post ),
+			'article_text'     => $this->article_text( $post ),
+			'metadata'         => array(),
+		);
+	}
 
-        // Convert HTML to plain text
-        $content = wp_strip_all_tags( $content );
+	/**
+	 * Subhead, if the site stores one.
+	 *
+	 * @param WP_Post $post Post object.
+	 * @return string
+	 */
+	protected function subhead( $post ) {
+		foreach ( array( 'subheading', 'subtitle', 'deck' ) as $key ) {
+			$value = get_post_meta( $post->ID, $key, true );
 
-        // Clean up whitespace
-        $content = trim( preg_replace( '/\s+/', ' ', $content ) );
+			if ( ! empty( $value ) && is_string( $value ) ) {
+				return $value;
+			}
+		}
 
-        return $content;
-    }
+		return '';
+	}
 
-    /**
-     * Build published image metadata
-     *
-     * @param array   $asset      Asset data
-     * @param WP_Post $post       Post object
-     * @param string  $usage_type Usage type (lead_photo, body_photo, thumbnail)
-     * @return array Published image data
-     */
-    protected function build_published_image( $asset, $post, $usage_type = 'body_photo' ) {
-        $article_uid = $this->generate_article_uid( $post );
+	/**
+	 * Short summary.
+	 *
+	 * @param WP_Post $post Post object.
+	 * @return string
+	 */
+	protected function abstract( $post ) {
+		if ( has_excerpt( $post->ID ) ) {
+			return get_the_excerpt( $post->ID );
+		}
 
-        // Extract article-specific metadata edited by user in WordPress
-        $metadata = isset( $asset['metadata'] ) ? $asset['metadata'] : array();
+		return wp_trim_words( wp_strip_all_tags( $post->post_content ), 55, '…' );
+	}
 
-        // Get article-specific fields (caption and alt_text go in main fields)
-        $caption = isset( $metadata['description'] ) ? $metadata['description'] :
-                   ( isset( $asset['caption'] ) ? $asset['caption'] : '' );
-        $alt_text = isset( $metadata['alt_text'] ) ? $metadata['alt_text'] :
-                    ( isset( $asset['alt_text'] ) ? $asset['alt_text'] : '' );
+	/**
+	 * Plain-text article body.
+	 *
+	 * Capped so a very long post cannot produce a multi-megabyte request.
+	 *
+	 * @param WP_Post $post Post object.
+	 * @return string
+	 */
+	protected function article_text( $post ) {
+		/**
+		 * Filter the maximum article body length sent to Mediagraph.
+		 *
+		 * Zero or less omits the body entirely, which is the opt-out for a site
+		 * that does not want post text leaving WordPress at all. To send a very
+		 * long body, raise the number rather than clearing it.
+		 *
+		 * @param int $limit Characters. Default 100000.
+		 */
+		$limit = (int) apply_filters( 'mediagraph_article_text_limit', 100000 );
 
-        // Build metadata JSON for all article-specific Asset Metadata fields
-        $article_metadata = array();
+		if ( $limit <= 0 ) {
+			return '';
+		}
 
-        // Title
-        if ( isset( $metadata['title'] ) && ! empty( $metadata['title'] ) ) {
-            $article_metadata['title'] = $metadata['title'];
-        }
+		$text = wp_strip_all_tags( strip_shortcodes( $post->post_content ) );
+		$text = trim( preg_replace( '/\s+/u', ' ', $text ) );
 
-        // Byline
-        if ( isset( $metadata['byline'] ) && ! empty( $metadata['byline'] ) ) {
-            $article_metadata['byline'] = $metadata['byline'];
-        }
+		if ( function_exists( 'mb_strlen' ) && mb_strlen( $text ) > $limit ) {
+			$text = mb_substr( $text, 0, $limit ) . '…';
+		}
 
-        // Headline
-        if ( isset( $metadata['headline'] ) && ! empty( $metadata['headline'] ) ) {
-            $article_metadata['headline'] = $metadata['headline'];
-        }
+		return $text;
+	}
 
-        // Description
-        if ( isset( $metadata['description'] ) && ! empty( $metadata['description'] ) ) {
-            $article_metadata['description'] = $metadata['description'];
-        }
+	/**
+	 * One published-asset record.
+	 *
+	 * @param array   $asset Usage record.
+	 * @param WP_Post $post  Post object.
+	 * @return array
+	 */
+	protected function published_asset_record( array $asset, $post ) {
+		return array(
+			'asset_guid'   => isset( $asset['guid'] ) ? (string) $asset['guid'] : '',
+			'published_in' => $this->article_uid( $post ),
+			'url'          => isset( $asset['url'] ) ? (string) $asset['url'] : '',
+			'filename'     => isset( $asset['filename'] ) ? (string) $asset['filename'] : '',
+			'cdn_link'     => isset( $asset['url'] ) ? (string) $asset['url'] : '',
+			'usage_type'   => $this->usage_type( $asset ),
+			'credit_line'  => isset( $asset['credit'] ) ? (string) $asset['credit'] : '',
+			'caption'      => isset( $asset['caption'] ) ? (string) $asset['caption'] : '',
+			'alt_text'     => isset( $asset['alt_text'] ) ? (string) $asset['alt_text'] : '',
+			'restrictions' => isset( $asset['restrictions'] ) ? (string) $asset['restrictions'] : '',
+			'metadata'     => $this->record_metadata( $asset ),
+		);
+	}
 
-        // Alt Text
-        if ( isset( $metadata['alt_text'] ) && ! empty( $metadata['alt_text'] ) ) {
-            $article_metadata['alt_text'] = $metadata['alt_text'];
-        }
+	/**
+	 * Extra per-asset metadata.
+	 *
+	 * @param array $asset Usage record.
+	 * @return array
+	 */
+	protected function record_metadata( array $asset ) {
+		$metadata = array();
 
-        // Extended Description
-        if ( isset( $metadata['extended_description'] ) && ! empty( $metadata['extended_description'] ) ) {
-            $article_metadata['extended_description'] = $metadata['extended_description'];
-        }
+		foreach ( array( 'title', 'caption', 'alt_text' ) as $key ) {
+			if ( ! empty( $asset[ $key ] ) ) {
+				$metadata[ $key ] = (string) $asset[ $key ];
+			}
+		}
 
-        // Keywords
-        if ( isset( $metadata['keywords'] ) && ! empty( $metadata['keywords'] ) ) {
-            $article_metadata['keywords'] = $metadata['keywords'];
-        }
+		if ( ! empty( $asset['attachment_id'] ) ) {
+			$metadata['wordpress_attachment_id'] = (int) $asset['attachment_id'];
+		}
 
-        // Usage Rights
-        if ( isset( $metadata['usage_rights'] ) && ! empty( $metadata['usage_rights'] ) ) {
-            $article_metadata['usage_rights'] = $metadata['usage_rights'];
-        }
+		return $metadata;
+	}
 
-        return array(
-            'asset_guid'    => isset( $asset['guid'] ) ? $asset['guid'] : '',
-            'published_in'  => $article_uid,
-            'url'           => isset( $asset['url'] ) ? $asset['url'] : '',
-            'filename'      => isset( $asset['filename'] ) ? $asset['filename'] : '',
-            'cdn_link'      => isset( $asset['cdn_url'] ) ? $asset['cdn_url'] : '',
-            'usage_type'    => $usage_type,
-            'credit_line'   => isset( $metadata['byline'] ) ? $metadata['byline'] :
-                               ( isset( $asset['credit'] ) ? $asset['credit'] : '' ),
-            'caption'       => $caption,
-            'alt_text'      => $alt_text,
-            'restrictions'  => isset( $asset['restrictions'] ) ? $asset['restrictions'] : '',
-            'metadata'      => $article_metadata,
-        );
-    }
+	/**
+	 * Usage type for a record.
+	 *
+	 * @param array $asset Usage record.
+	 * @return string
+	 */
+	protected function usage_type( array $asset ) {
+		if ( ! empty( $asset['usage_type'] ) && 'body_photo' !== $asset['usage_type'] ) {
+			return (string) $asset['usage_type'];
+		}
 
-    /**
-     * Build published video metadata
-     *
-     * @param array   $asset      Asset data
-     * @param WP_Post $post       Post object
-     * @param string  $usage_type Usage type (body_video, featured_video)
-     * @return array Published video data
-     */
-    protected function build_published_video( $asset, $post, $usage_type = 'body_video' ) {
-        // Similar structure to images
-        return $this->build_published_image( $asset, $post, $usage_type );
-    }
-
-    /**
-     * Categorize asset by usage type
-     *
-     * @param array   $asset Asset data
-     * @param WP_Post $post  Post object
-     * @return string Usage type
-     */
-    protected function determine_usage_type( $asset, $post ) {
-        // Check if it's the featured image
-        $featured_image_id = get_post_thumbnail_id( $post->ID );
-        if ( $featured_image_id ) {
-            $featured_asset_id = get_post_meta( $featured_image_id, '_mediagraph_asset_id', true );
-            if ( $featured_asset_id === $asset['id'] ) {
-                return 'lead_photo';
-            }
-        }
-
-        // Check if specified in asset data
-        if ( isset( $asset['usage_type'] ) ) {
-            return $asset['usage_type'];
-        }
-
-        // Default to body photo/video
-        if ( isset( $asset['mime_type'] ) && strpos( $asset['mime_type'], 'video' ) !== false ) {
-            return 'body_video';
-        }
-
-        return 'body_photo';
-    }
-
-    /**
-     * Get WordPress attachment metadata if asset was downloaded
-     *
-     * @param string $asset_id Mediagraph asset ID
-     * @return array|null Attachment metadata or null
-     */
-    protected function get_wordpress_attachment_for_asset( $asset_id ) {
-        $args = array(
-            'post_type'   => 'attachment',
-            'meta_key'    => '_mediagraph_asset_id',
-            'meta_value'  => $asset_id,
-            'numberposts' => 1,
-        );
-
-        $attachments = get_posts( $args );
-
-        if ( empty( $attachments ) ) {
-            return null;
-        }
-
-        $attachment = $attachments[0];
-
-        return array(
-            'id'        => $attachment->ID,
-            'url'       => wp_get_attachment_url( $attachment->ID ),
-            'alt_text'  => get_post_meta( $attachment->ID, '_wp_attachment_image_alt', true ),
-            'caption'   => $attachment->post_excerpt,
-            'title'     => $attachment->post_title,
-        );
-    }
+		return ! empty( $asset['is_video'] ) ? 'body_video' : 'body_photo';
+	}
 }

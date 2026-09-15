@@ -1,271 +1,165 @@
 <?php
 /**
- * Mediagraph WordPress Metadata Mapper
+ * WordPress metadata mapper.
  *
- * WordPress-specific implementation of metadata mapper.
- * Handles standard WordPress post and media metadata.
- *
- * @package MediagraphPicker
+ * @package MediagraphAssets
  */
 
-// Exit if accessed directly
 if ( ! defined( 'ABSPATH' ) ) {
-    exit;
+	exit;
 }
 
 /**
- * WordPress metadata mapper class
+ * Adds WordPress taxonomy and SEO context to the article payload.
  */
 class Mediagraph_WordPress_Mapper extends Mediagraph_Metadata_Mapper {
 
-    /**
-     * Build publish metadata payload
-     *
-     * @param WP_Post $post              Post object
-     * @param array   $mediagraph_assets Assets used in post
-     * @return array Metadata payload
-     */
-    public function build_publish_payload( $post, $mediagraph_assets ) {
-        // Get publisher properties
-        $publisher = $this->get_publisher_properties();
+	/**
+	 * Article fields plus WordPress specifics.
+	 *
+	 * @param WP_Post $post Post object.
+	 * @return array
+	 */
+	protected function article_properties( $post ) {
+		$article = parent::article_properties( $post );
 
-        // Get article properties
-        $article = $this->get_article_properties( $post );
+		$metadata = isset( $article['metadata'] ) && is_array( $article['metadata'] ) ? $article['metadata'] : array();
 
-        // Process published images and videos
-        $published_images = array();
-        $published_videos = array();
+		$metadata['post_type'] = $post->post_type;
+		$metadata['post_id']   = (int) $post->ID;
 
-        foreach ( $mediagraph_assets as $asset ) {
-            $usage_type = $this->determine_usage_type( $asset, $post );
+		$categories = $this->term_names( $post, 'category' );
 
-            // Check if it's an image or video
-            $is_video = isset( $asset['asset_type'] ) && in_array( $asset['asset_type'], array( 'video', 'audio' ), true );
+		if ( ! empty( $categories ) ) {
+			$metadata['categories'] = $categories;
+		}
 
-            if ( $is_video ) {
-                $published_videos[] = $this->build_published_video( $asset, $post, $usage_type );
-            } else {
-                $published_images[] = $this->build_published_image( $asset, $post, $usage_type );
-            }
-        }
+		$tags = $this->term_names( $post, 'post_tag' );
 
-        $article['published_images'] = $published_images;
-        $article['published_videos'] = $published_videos;
+		if ( ! empty( $tags ) ) {
+			$metadata['tags'] = $tags;
+		}
 
-        // Add lead photo if specified
-        $article['lead_photo'] = $this->get_lead_photo( $post, $published_images );
+		$comments = wp_count_comments( $post->ID );
 
-        // Build complete payload
-        return array_merge( $publisher, $article );
-    }
+		$metadata['comments'] = array(
+			'count'   => isset( $comments->approved ) ? (int) $comments->approved : 0,
+			'enabled' => comments_open( $post->ID ),
+		);
 
-    /**
-     * Get lead photo from published images
-     *
-     * @param WP_Post $post             Post object
-     * @param array   $published_images Published images array
-     * @return array|null Lead photo data or null
-     */
-    private function get_lead_photo( $post, $published_images ) {
-        // Find the lead photo from published images
-        foreach ( $published_images as $image ) {
-            if ( isset( $image['usage_type'] ) && 'lead_photo' === $image['usage_type'] ) {
-                return $image;
-            }
-        }
+		$inbound = $this->inbound_links( $post );
 
-        return null;
-    }
+		if ( ! empty( $inbound ) ) {
+			$metadata['inbound_links'] = $inbound;
+		}
 
-    /**
-     * Get article properties with WordPress-specific enhancements
-     *
-     * @param WP_Post $post Post object
-     * @return array Article data
-     */
-    protected function get_article_properties( $post ) {
-        $article = parent::get_article_properties( $post );
+		$seo = $this->seo_fields( $post );
 
-        // Get WordPress-specific data
-        $categories = $this->get_categories( $post );
-        $tags = $this->get_tags( $post );
+		if ( ! empty( $seo ) ) {
+			$metadata = array_merge( $metadata, $seo );
+		}
 
-        // Add WordPress-specific fields to article metadata (JSON field)
-        // These go in metadata since they're not standard published_asset columns
-        $article_metadata = isset( $article['metadata'] ) ? $article['metadata'] : array();
+		$article['metadata'] = $metadata;
 
-        // Add categories to metadata
-        if ( ! empty( $categories ) ) {
-            $article_metadata['categories'] = $categories;
-        }
+		return $article;
+	}
 
-        // Add tags to metadata
-        if ( ! empty( $tags ) ) {
-            $article_metadata['tags'] = $tags;
-        }
+	/**
+	 * Excerpt fallback for the subhead.
+	 *
+	 * @param WP_Post $post Post object.
+	 * @return string
+	 */
+	protected function subhead( $post ) {
+		$subhead = parent::subhead( $post );
 
-        // Add comments info to metadata
-        $comments = $this->get_comments_data( $post );
-        if ( ! empty( $comments ) ) {
-            $article_metadata['comments'] = $comments;
-        }
+		if ( '' !== $subhead ) {
+			return $subhead;
+		}
 
-        // Add inbound links to metadata
-        $inbound_links = $this->get_inbound_links( $post );
-        if ( ! empty( $inbound_links ) ) {
-            $article_metadata['inbound_links'] = $inbound_links;
-        }
+		return has_excerpt( $post->ID ) ? get_the_excerpt( $post->ID ) : '';
+	}
 
-        // Add custom fields to metadata if they exist
-        $article_metadata = $this->add_custom_fields_to_metadata( $article_metadata, $post );
+	/**
+	 * Term names for a taxonomy.
+	 *
+	 * @param WP_Post $post     Post object.
+	 * @param string  $taxonomy Taxonomy name.
+	 * @return array
+	 */
+	private function term_names( $post, $taxonomy ) {
+		if ( ! is_object_in_taxonomy( $post->post_type, $taxonomy ) ) {
+			return array();
+		}
 
-        $article['metadata'] = $article_metadata;
+		$terms = get_the_terms( $post->ID, $taxonomy );
 
-        return $article;
-    }
+		if ( ! is_array( $terms ) ) {
+			return array();
+		}
 
-    /**
-     * Add custom fields to metadata array
-     *
-     * @param array   $metadata Metadata array
-     * @param WP_Post $post     Post object
-     * @return array Updated metadata
-     */
-    private function add_custom_fields_to_metadata( $metadata, $post ) {
-        // Look for common SEO and editorial meta fields
-        $meta_fields = array(
-            'meta_description'   => '_yoast_wpseo_metadesc', // Yoast SEO
-            'focus_keyword'      => '_yoast_wpseo_focuskw',
-            'social_title'       => '_yoast_wpseo_opengraph-title',
-            'social_description' => '_yoast_wpseo_opengraph-description',
-        );
+		return array_values( wp_list_pluck( $terms, 'name' ) );
+	}
 
-        foreach ( $meta_fields as $key => $meta_key ) {
-            $value = get_post_meta( $post->ID, $meta_key, true );
-            if ( ! empty( $value ) ) {
-                $metadata[ $key ] = $value;
-            }
-        }
+	/**
+	 * Trackbacks and pingbacks.
+	 *
+	 * @param WP_Post $post Post object.
+	 * @return array
+	 */
+	private function inbound_links( $post ) {
+		$pingbacks = get_comments(
+			array(
+				'post_id' => $post->ID,
+				'type__in' => array( 'pingback', 'trackback' ),
+				'status'  => 'approve',
+			)
+		);
 
-        return $metadata;
-    }
+		$links = array();
 
-    /**
-     * Get comments data
-     *
-     * @param WP_Post $post Post object
-     * @return array Comments info
-     */
-    private function get_comments_data( $post ) {
-        $comments_count = wp_count_comments( $post->ID );
+		foreach ( $pingbacks as $pingback ) {
+			$links[] = array(
+				'url'   => $pingback->comment_author_url,
+				'title' => $pingback->comment_author,
+				'date'  => $pingback->comment_date,
+			);
+		}
 
-        return array(
-            'count'    => $comments_count->approved,
-            'enabled'  => comments_open( $post->ID ),
-        );
-    }
+		return $links;
+	}
 
-    /**
-     * Get inbound links (trackbacks/pingbacks)
-     *
-     * @param WP_Post $post Post object
-     * @return array Inbound links
-     */
-    private function get_inbound_links( $post ) {
-        $pingbacks = get_comments( array(
-            'post_id' => $post->ID,
-            'type'    => array( 'pingback', 'trackback' ),
-            'status'  => 'approve',
-        ));
+	/**
+	 * Common SEO plugin fields, when present.
+	 *
+	 * @param WP_Post $post Post object.
+	 * @return array
+	 */
+	private function seo_fields( $post ) {
+		$map = array(
+			'meta_description'   => '_yoast_wpseo_metadesc',
+			'focus_keyword'      => '_yoast_wpseo_focuskw',
+			'social_title'       => '_yoast_wpseo_opengraph-title',
+			'social_description' => '_yoast_wpseo_opengraph-description',
+		);
 
-        $links = array();
-        foreach ( $pingbacks as $pingback ) {
-            $links[] = array(
-                'url'    => $pingback->comment_author_url,
-                'title'  => $pingback->comment_author,
-                'date'   => $pingback->comment_date,
-            );
-        }
+		/**
+		 * Filter the post meta keys collected as SEO metadata.
+		 *
+		 * @param array $map Payload key => post meta key.
+		 */
+		$map = (array) apply_filters( 'mediagraph_seo_meta_map', $map );
 
-        return $links;
-    }
+		$fields = array();
 
-    /**
-     * Get post categories
-     *
-     * @param WP_Post $post Post object
-     * @return array Categories
-     */
-    private function get_categories( $post ) {
-        $categories = get_the_category( $post->ID );
-        $category_names = array();
+		foreach ( $map as $key => $meta_key ) {
+			$value = get_post_meta( $post->ID, $meta_key, true );
 
-        foreach ( $categories as $category ) {
-            $category_names[] = $category->name;
-        }
+			if ( ! empty( $value ) && is_string( $value ) ) {
+				$fields[ $key ] = $value;
+			}
+		}
 
-        return $category_names;
-    }
-
-    /**
-     * Get post tags
-     *
-     * @param WP_Post $post Post object
-     * @return array Tags
-     */
-    private function get_tags( $post ) {
-        $tags = get_the_tags( $post->ID );
-        $tag_names = array();
-
-        if ( $tags ) {
-            foreach ( $tags as $tag ) {
-                $tag_names[] = $tag->name;
-            }
-        }
-
-        return $tag_names;
-    }
-
-    /**
-     * Get subhead with WordPress-specific fallbacks
-     *
-     * @param WP_Post $post Post object
-     * @return string Subhead
-     */
-    protected function get_subhead( $post ) {
-        // Try parent implementation first
-        $subhead = parent::get_subhead( $post );
-
-        if ( ! empty( $subhead ) ) {
-            return $subhead;
-        }
-
-        // WordPress-specific: try excerpt as subhead if available
-        if ( has_excerpt( $post->ID ) ) {
-            return get_the_excerpt( $post->ID );
-        }
-
-        return '';
-    }
-
-    /**
-     * Determine usage type with WordPress-specific logic
-     *
-     * @param array   $asset Asset data
-     * @param WP_Post $post  Post object
-     * @return string Usage type
-     */
-    protected function determine_usage_type( $asset, $post ) {
-        // Check if it's the featured/thumbnail image
-        $thumbnail_id = get_post_thumbnail_id( $post->ID );
-        if ( $thumbnail_id ) {
-            $thumbnail_asset_id = get_post_meta( $thumbnail_id, '_mediagraph_asset_id', true );
-            if ( $thumbnail_asset_id && $thumbnail_asset_id === $asset['id'] ) {
-                return 'lead_photo';
-            }
-        }
-
-        // Use parent implementation for other cases
-        return parent::determine_usage_type( $asset, $post );
-    }
+		return $fields;
+	}
 }

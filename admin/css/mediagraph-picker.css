@@ -1,987 +1,1336 @@
 /**
- * Mediagraph Picker Styles
+ * Mediagraph picker.
+ *
+ * Everything is namespaced under .mg- so nothing here can leak into the
+ * surrounding admin or block editor styles. Colours follow the WordPress admin
+ * palette so the picker reads as part of the editor rather than a bolt-on.
  */
 
-/* Modal Container */
-#mediagraph-picker-modal {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.7);
-  z-index: 160000;
-}
-
-#mediagraph-picker-modal.active {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.mediagraph-picker-content {
-  background: #fff;
-  width: 90%;
-  max-width: 1400px;
-  height: 95%;
-  max-height: none;
-  border-radius: 4px;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-/* Header */
-.mediagraph-picker-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px 20px;
-  border-bottom: 1px solid #ddd;
-  background: #f7f7f7;
-}
+.mg-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: 160000;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 24px;
+	background: rgba( 12, 14, 18, 0.66 );
+	backdrop-filter: blur( 2px );
+}
+
+.mg-dialog {
+	display: flex;
+	width: 100%;
+	max-width: 1360px;
+	height: 100%;
+	max-height: 880px;
+	overflow: hidden;
+	background: #fff;
+	border-radius: 8px;
+	box-shadow: 0 24px 64px rgba( 0, 0, 0, 0.32 );
+}
+
+.mg-picker {
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	min-width: 0;
+	color: #1e1e1e;
+	font-size: 13px;
+	line-height: 1.5;
+}
+
+/* Header ------------------------------------------------------------------ */
+
+.mg-picker__header {
+	display: flex;
+	flex: 0 0 auto;
+	align-items: center;
+	justify-content: space-between;
+	padding: 14px 20px;
+	border-bottom: 1px solid #e0e0e0;
+}
+
+.mg-picker__heading {
+	display: flex;
+	gap: 10px;
+	align-items: center;
+	margin: 0;
+	font-size: 16px;
+	font-weight: 600;
+}
+
+.mg-picker__logo {
+	display: block;
+	flex: 0 0 auto;
+	width: 24px;
+	height: 24px;
+	border-radius: 50%;
+}
+
+.mg-picker__actions {
+	display: flex;
+	flex: 0 0 auto;
+	gap: 8px;
+	align-items: center;
+}
+
+.mg-picker__close {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 32px;
+	height: 32px;
+	padding: 0;
+	color: #50575e;
+	font-size: 22px;
+	line-height: 1;
+	background: none;
+	border: 0;
+	border-radius: 4px;
+	cursor: pointer;
+}
+
+.mg-picker__close:hover,
+.mg-picker__close:focus {
+	color: #1e1e1e;
+	background: #f0f0f1;
+}
+
+/* Toolbar ----------------------------------------------------------------- */
+
+.mg-toolbar {
+	display: flex;
+	flex: 0 0 auto;
+	flex-wrap: wrap;
+	gap: 12px;
+	align-items: center;
+	padding: 12px 20px;
+	border-bottom: 1px solid #e0e0e0;
+}
+
+/* The wrapper owns the border and the layout; the input inside is bare. This
+   removes the whole class of overlap bugs that absolute positioning invites,
+   and makes the control immune to the admin's own input[type=search] rules. */
+.mg-toolbar__search {
+	display: flex;
+	flex: 1 1 260px;
+	gap: 6px;
+	align-items: center;
+	min-width: 200px;
+	height: 36px;
+	padding: 0 8px;
+	background: #fff;
+	border: 1px solid #949494;
+	border-radius: 4px;
+}
+
+.mg-toolbar__search:focus-within {
+	border-color: #2271b1;
+	box-shadow: 0 0 0 1px #2271b1;
+}
+
+.mg-toolbar__search-icon {
+	flex: 0 0 auto;
+	width: 18px;
+	height: 18px;
+	color: #757575;
+	font-size: 18px;
+	line-height: 1;
+}
+
+/* Reset hard, because wp-admin styles input[type=search] globally. */
+.mg-toolbar__search .mg-toolbar__input,
+.mg-toolbar__search input[type="search"].mg-toolbar__input {
+	flex: 1 1 auto;
+	min-width: 0;
+	height: auto;
+	min-height: 0;
+	margin: 0;
+	padding: 0;
+	color: inherit;
+	font-size: 13px;
+	line-height: 20px;
+	background: none;
+	border: 0;
+	border-radius: 0;
+	box-shadow: none;
+}
+
+.mg-toolbar__search .mg-toolbar__input:focus {
+	outline: none;
+	box-shadow: none;
+}
+
+/* Chrome draws its own clear affordance on search inputs; ours is better
+   placed and keyboard reachable. */
+.mg-toolbar__search .mg-toolbar__input::-webkit-search-cancel-button {
+	-webkit-appearance: none;
+	appearance: none;
+}
+
+.mg-toolbar__clear {
+	display: flex;
+	flex: 0 0 auto;
+	align-items: center;
+	justify-content: center;
+	width: 20px;
+	height: 20px;
+	padding: 0;
+	color: #50575e;
+	font-size: 16px;
+	line-height: 1;
+	background: none;
+	border: 0;
+	border-radius: 50%;
+	cursor: pointer;
+}
+
+.mg-toolbar__clear:hover {
+	background: #f0f0f1;
+}
+
+.mg-toolbar__kinds {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.mg-toolbar__controls {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+	margin-left: auto;
+}
+
+.mg-toolbar__select {
+	height: 36px;
+	max-width: 200px;
+	border-radius: 4px;
+}
+
+.mg-chip {
+	padding: 5px 12px;
+	color: #1e1e1e;
+	font-size: 12px;
+	background: #f0f0f1;
+	border: 1px solid transparent;
+	border-radius: 999px;
+	cursor: pointer;
+}
+
+.mg-chip:hover {
+	background: #e0e0e0;
+}
+
+.mg-chip.is-active {
+	color: #fff;
+	background: #2271b1;
+}
+
+.mg-chip--locked {
+	color: #50575e;
+	background: #fcf3d8;
+	border-color: #f0c33c;
+	cursor: default;
+}
+
+.mg-badge {
+	display: inline-block;
+	min-width: 18px;
+	margin-left: 6px;
+	padding: 0 5px;
+	color: #fff;
+	font-size: 11px;
+	line-height: 18px;
+	text-align: center;
+	background: #2271b1;
+	border-radius: 9px;
+}
+
+/* Filters ----------------------------------------------------------------- */
+
+/* One grid for every filter, so the drawer stays orderly and reflows with the
+   picker width instead of stacking into ragged rows. */
+.mg-filters {
+	display: grid;
+	flex: 0 0 auto;
+	grid-template-columns: repeat( auto-fill, minmax( 190px, 1fr ) );
+	/* Dense packing lets the short single-control cells backfill the row beside
+	   the taller Rights status block instead of leaving it empty. */
+	grid-auto-flow: row dense;
+	gap: 14px 18px;
+	align-items: start;
+	max-height: 40vh;
+	padding: 16px 20px;
+	overflow-y: auto;
+	background: #f6f7f7;
+	border-bottom: 1px solid #e0e0e0;
+}
+
+.mg-filter {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	min-width: 0;
+}
+
+/* Rights status carries seven checkboxes, so it earns two columns and two rows
+   where the width exists — the taller block then sits alongside two rows of
+   ordinary controls rather than forcing them into a ragged single row. */
+.mg-filter--wide {
+	grid-column: span 2;
+	grid-row: span 2;
+}
+
+@media ( max-width: 700px ) {
+	.mg-filter--wide {
+		grid-column: span 1;
+		grid-row: span 1;
+	}
+}
+
+.mg-filter__label {
+	color: #50575e;
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.02em;
+}
+
+.mg-filter__hint {
+	color: #757575;
+	font-size: 11px;
+	line-height: 1.4;
+}
+
+.mg-filter select,
+.mg-filter input[type="date"] {
+	width: 100%;
+	max-width: 100%;
+	min-height: 30px;
+	box-sizing: border-box;
+}
+
+/* Reset the fieldset so it lays out like any other cell. */
+.mg-filter__group {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	min-width: 0;
+	margin: 0;
+	padding: 0;
+	border: 0;
+}
+
+.mg-filter__group legend {
+	padding: 0;
+}
+
+.mg-filter__checks {
+	display: grid;
+	grid-template-columns: repeat( auto-fill, minmax( 170px, 1fr ) );
+	gap: 2px 14px;
+}
+
+.mg-filter__check {
+	display: flex;
+	gap: 6px;
+	align-items: flex-start;
+	font-size: 12px;
+	line-height: 1.4;
+}
+
+.mg-filter__check input {
+	flex: 0 0 auto;
+	margin: 2px 0 0;
+}
+
+.mg-filter__range {
+	display: flex;
+	gap: 6px;
+	align-items: center;
+}
+
+.mg-filter__range input[type="date"] {
+	flex: 1 1 0;
+	min-width: 0;
+}
+
+.mg-filter__range-sep {
+	flex: 0 0 auto;
+	color: #757575;
+}
 
-.mediagraph-picker-header h2 {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 600;
-}
-
-.mediagraph-picker-close {
-  background: none;
-  border: none;
-  font-size: 24px;
-  cursor: pointer;
-  color: #666;
-  padding: 0;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.mg-filters__empty {
+	grid-column: 1 / -1;
+	margin: 0;
+	color: #757575;
+	font-size: 12px;
+	font-style: italic;
+}
+
+/* Body -------------------------------------------------------------------- */
+
+.mg-picker__body {
+	display: flex;
+	flex: 1 1 auto;
+	min-height: 0;
 }
 
-.mediagraph-picker-close:hover {
-  color: #000;
+.mg-sidebar {
+	flex: 0 0 248px;
+	padding: 12px 0;
+	overflow-y: auto;
+	background: #f6f7f7;
+	border-right: 1px solid #e0e0e0;
+}
+
+.mg-sidebar__header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 0 12px 10px;
+	color: #50575e;
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
 }
 
-/* Top Navigation */
-.mediagraph-picker-nav {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 20px;
-  border-bottom: 1px solid #ddd;
-  background: #fff;
-  flex-wrap: wrap;
+.mg-sidebar__section {
+	margin-top: 14px;
 }
 
-.mediagraph-picker-nav button {
-  padding: 6px 12px;
-  border: 1px solid #ccc;
-  background: #fff;
-  cursor: pointer;
-  border-radius: 3px;
+.mg-sidebar__section h3 {
+	margin: 0;
+	padding: 0 8px;
 }
 
-.mediagraph-picker-nav button:hover {
-  background: #f7f7f7;
+.mg-sidebar__section-toggle {
+	display: flex;
+	gap: 2px;
+	align-items: center;
+	width: 100%;
+	padding: 4px;
+	color: #50575e;
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	background: none;
+	border: 0;
+	cursor: pointer;
 }
 
-.mediagraph-picker-breadcrumb {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  color: #666;
+/* "All assets" is a peer of the section headings, not of the tree, so it keeps
+   the heading's indent. */
+.mg-sidebar__all {
+	width: calc( 100% - 16px );
+	margin: 0 8px;
 }
 
-.mediagraph-picker-search {
-  flex: 1;
-  min-width: 200px;
+.mg-sidebar__error {
+	margin: 4px 12px;
+	padding: 6px 8px;
+	color: #8a2424;
+	font-size: 12px;
+	background: #fcf0f1;
+	border-left: 3px solid #d63638;
 }
 
-.mediagraph-picker-search input {
-  width: 100%;
-  padding: 6px 12px;
-  border: 1px solid #ccc;
-  border-radius: 3px;
+.mg-tree,
+.mg-tree__children {
+	margin: 0;
+	padding: 0;
+	list-style: none;
 }
 
-.mediagraph-picker-sort select {
-  padding: 6px 32px 6px 12px;
-  border: 1px solid #ccc;
-  border-radius: 3px;
-  background-color: #fff;
-  cursor: pointer;
-  font-size: 13px;
+/* Top-level containers sit to the right of their section's disclosure arrow,
+   so the tree reads as living inside File Vault / Libraries / My Projects
+   rather than as a sibling of them. The section toggle's arrow occupies
+   8px (h3 padding) + 4px (button padding) + 20px (glyph). */
+.mg-tree {
+	padding-left: 20px;
 }
 
-/* Main Content Area */
-.mediagraph-picker-body {
-  display: flex;
-  flex: 1;
-  overflow: hidden;
+.mg-tree__row {
+	display: flex;
+	align-items: center;
 }
 
-/* Sidebar - Container Tree */
-.mediagraph-picker-sidebar {
-  width: 250px;
-  border-right: 1px solid #ddd;
-  background: #f7f7f7;
-  overflow-y: auto;
-  padding: 16px 0;
+.mg-tree__disclosure {
+	display: flex;
+	flex: 0 0 24px;
+	align-items: center;
+	justify-content: center;
+	height: 28px;
+	padding: 0;
+	color: #757575;
+	background: none;
+	border: 0;
+	cursor: pointer;
 }
 
-.mediagraph-picker-sidebar.collapsed {
-  display: none;
+.mg-tree__disclosure--empty {
+	cursor: default;
 }
 
-.mediagraph-container-section {
-  margin-bottom: 20px;
+.mg-tree__label {
+	display: flex;
+	flex: 1;
+	gap: 8px;
+	align-items: center;
+	min-width: 0;
+	padding: 5px 8px;
+	color: #1e1e1e;
+	font-size: 13px;
+	text-align: left;
+	background: none;
+	border: 0;
+	border-radius: 3px;
+	cursor: pointer;
 }
 
-.mediagraph-container-section h3 {
-  font-size: 12px;
-  text-transform: uppercase;
-  color: #666;
-  margin: 0 16px 8px;
-  font-weight: 600;
+.mg-tree__label:hover {
+	background: #e8e8e8;
 }
 
-.mediagraph-section-header {
-  user-select: none;
-  padding: 8px 16px;
-  margin: 0 0 8px 0 !important;
-  border-radius: 3px;
-  transition: background-color 0.2s;
+.mg-tree__label.is-active {
+	color: #fff;
+	background: #2271b1;
 }
 
-.mediagraph-section-header:hover {
-  background-color: rgba(0, 0, 0, 0.05);
+.mg-tree__label.is-active .mg-tree__count {
+	color: rgba( 255, 255, 255, 0.8 );
 }
 
-.mediagraph-section-toggle {
-  font-size: 14px;
-  color: #999;
-  margin-left: 8px;
+.mg-tree__name {
+	flex: 1;
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
 }
 
-.mediagraph-empty-message {
-  padding: 8px 16px;
-  margin: 0;
-  color: #999;
-  font-size: 12px;
-  font-style: italic;
+.mg-tree__count {
+	color: #757575;
+	font-size: 11px;
+	font-variant-numeric: tabular-nums;
 }
 
-.mediagraph-container-tree {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+.mg-tree__hint {
+	margin: 2px 0 2px 24px;
+	color: #757575;
+	font-size: 12px;
+	font-style: italic;
 }
 
-.mediagraph-container-item {
-  position: relative;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
+/* Results ----------------------------------------------------------------- */
+
+.mg-picker__main {
+	display: flex;
+	flex: 1 1 auto;
+	flex-direction: column;
+	min-width: 0;
+	overflow-y: auto;
+}
+
+.mg-results {
+	flex: 1;
+	padding: 0 20px;
+}
+
+.mg-results__bar {
+	display: flex;
+	gap: 12px;
+	align-items: center;
+	justify-content: space-between;
+	padding: 12px 0;
+	color: #50575e;
+	font-size: 12px;
+}
+
+.mg-results__hint {
+	color: #757575;
+	font-style: italic;
 }
 
-.mediagraph-container-button {
-  flex: 1;
-  text-align: left;
-  padding: 8px 16px 8px 8px;
-  border: none;
-  background: none;
-  cursor: pointer;
-  font-size: 13px;
-  color: #333;
-  display: flex;
-  align-items: center;
-  gap: 6px;
+.mg-grid {
+	display: grid;
+	grid-template-columns: repeat( auto-fill, minmax( 168px, 1fr ) );
+	gap: 14px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
 }
 
-.mediagraph-container-button:hover {
-  background: #e5e5e5;
+.mg-grid.is-stale {
+	opacity: 0.55;
+	transition: opacity 120ms ease;
 }
 
-.mediagraph-container-button.active {
-  background: #0073aa;
-  color: #fff;
+.mg-card {
+	position: relative;
+	overflow: hidden;
+	background: #fff;
+	border: 1px solid #e0e0e0;
+	border-radius: 6px;
+	transition: border-color 120ms ease, box-shadow 120ms ease;
 }
 
-.mediagraph-container-toggle {
-  width: 24px;
-  height: 32px;
-  border: none;
-  background: none;
-  cursor: pointer;
-  padding: 0;
-  font-size: 12px;
-  color: #666;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
+.mg-card:hover {
+	border-color: #a7aaad;
+	box-shadow: 0 2px 6px rgba( 0, 0, 0, 0.08 );
 }
 
-.mediagraph-container-toggle:hover {
-  color: #333;
+.mg-card.is-selected {
+	border-color: #2271b1;
+	box-shadow: 0 0 0 2px #2271b1;
 }
 
-.mediagraph-container-children {
-  width: 100%;
-  padding-left: 16px;
-  list-style: none;
-  margin: 0;
+.mg-card.is-restricted {
+	opacity: 0.62;
 }
 
-/* Asset Grid */
-.mediagraph-picker-main {
-  flex: 1;
-  overflow-y: auto;
-  padding: 20px;
+.mg-card__hit {
+	display: block;
+	cursor: pointer;
 }
 
-.mediagraph-asset-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 16px;
+.mg-card.is-restricted .mg-card__hit {
+	cursor: not-allowed;
 }
 
-.mediagraph-asset-item {
-  position: relative;
-  cursor: pointer;
-  border: 2px solid transparent;
-  border-radius: 4px;
-  overflow: hidden;
-  background: #f7f7f7;
-  transition: border-color 0.2s;
+.mg-card__hit:focus-visible {
+	outline: 2px solid #2271b1;
+	outline-offset: -2px;
 }
 
-.mediagraph-asset-item:hover {
-  border-color: #0073aa;
+.mg-card__thumb {
+	position: relative;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	aspect-ratio: 4 / 3;
+	overflow: hidden;
+	background: #f0f0f1;
 }
 
-.mediagraph-asset-item.selected {
-  border-color: #0073aa;
-  background: #e5f5fa;
+.mg-card__thumb img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
 }
 
-.mediagraph-asset-item.restricted {
-  opacity: 0.5;
-  position: relative;
+.mg-card__placeholder {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	align-items: center;
+	color: #757575;
 }
 
-.mediagraph-asset-item.restricted::after {
-  content: '🔒';
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  font-size: 16px;
-  background: rgba(0, 0, 0, 0.6);
-  padding: 4px 8px;
-  border-radius: 3px;
+.mg-card__placeholder .dashicons {
+	width: 32px;
+	height: 32px;
+	font-size: 32px;
 }
 
-.mediagraph-asset-thumbnail {
-  width: 100%;
-  aspect-ratio: 1;
-  object-fit: cover;
-  display: block;
-  overflow: hidden;
+.mg-card__placeholder-label {
+	font-size: 11px;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
 }
 
-.mediagraph-asset-thumbnail img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+.mg-card__kind {
+	position: absolute;
+	bottom: 6px;
+	left: 6px;
+	padding: 2px 7px;
+	color: #fff;
+	font-size: 10px;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	background: rgba( 0, 0, 0, 0.68 );
+	border-radius: 3px;
 }
 
-/* Audio/Document placeholders */
-.mediagraph-asset-audio,
-.mediagraph-asset-document {
-  width: 100%;
-  aspect-ratio: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #f7f7f7;
-  position: relative;
+.mg-card__check {
+	position: absolute;
+	top: 6px;
+	left: 6px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 22px;
+	height: 22px;
+	background: rgba( 255, 255, 255, 0.9 );
+	border: 1px solid #a7aaad;
+	border-radius: 4px;
 }
 
-.mediagraph-audio-placeholder,
-.mediagraph-video-placeholder,
-.mediagraph-document-placeholder {
-  font-size: 48px;
-  color: #999;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
-  background: #f5f5f5;
+.mg-card__check.is-checked {
+	color: #fff;
+	background: #2271b1;
+	border-color: #2271b1;
 }
 
-.mediagraph-asset-type-badge {
-  position: absolute;
-  bottom: 8px;
-  left: 8px;
-  background: rgba(0, 0, 0, 0.7);
-  color: #fff;
-  font-size: 11px;
-  padding: 4px 8px;
-  border-radius: 3px;
+.mg-card__check .dashicons {
+	width: 16px;
+	height: 16px;
+	font-size: 16px;
 }
 
-.mediagraph-asset-info {
-  padding: 8px;
-  font-size: 12px;
+.mg-card__lock {
+	position: absolute;
+	top: 6px;
+	right: 6px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 24px;
+	height: 24px;
+	color: #fff;
+	background: rgba( 0, 0, 0, 0.6 );
+	border-radius: 50%;
 }
 
-.mediagraph-asset-name {
-  font-weight: 500;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.mg-card__lock .dashicons {
+	width: 14px;
+	height: 14px;
+	font-size: 14px;
 }
 
-/* Pagination */
-.mediagraph-pagination {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 8px;
-  margin-top: 24px;
-  padding-top: 16px;
-  border-top: 1px solid #eee;
+.mg-card__body {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	padding: 8px 10px 10px;
 }
 
-.mediagraph-pagination-ellipsis {
-  padding: 0 4px;
-  color: #666;
+.mg-card__name {
+	overflow: hidden;
+	font-size: 12px;
+	font-weight: 500;
+	white-space: nowrap;
+	text-overflow: ellipsis;
 }
 
-/* Asset Detail Modal */
-.mediagraph-asset-detail {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: #fff;
-  width: 95%;
-  max-width: 1600px;
-  max-height: 90vh;
-  border-radius: 4px;
-  box-shadow: 0 5px 25px rgba(0, 0, 0, 0.5);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  z-index: 160001;
+.mg-card__meta {
+	color: #757575;
+	font-size: 11px;
 }
 
-.mediagraph-asset-detail-header {
-  padding: 16px 20px;
-  border-bottom: 1px solid #ddd;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+/* Skeletons --------------------------------------------------------------- */
+
+.mg-card--skeleton {
+	pointer-events: none;
 }
 
-.mediagraph-asset-detail-body {
-  display: flex;
-  flex: 1;
-  overflow: hidden;
+.mg-card--skeleton .mg-card__thumb {
+	background: linear-gradient( 90deg, #f0f0f1 25%, #e6e6e8 37%, #f0f0f1 63% );
+	background-size: 400% 100%;
+	animation: mg-shimmer 1.4s ease infinite;
 }
 
-.mediagraph-asset-detail-preview {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #000;
-  padding: 20px;
+.mg-skeleton-line {
+	height: 10px;
+	background: #f0f0f1;
+	border-radius: 3px;
 }
 
-.mediagraph-asset-detail-preview img,
-.mediagraph-asset-detail-preview video {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
+.mg-skeleton-line--short {
+	width: 55%;
 }
+
+@keyframes mg-shimmer {
+	0% {
+		background-position: 100% 50%;
+	}
 
-.mediagraph-asset-detail-metadata {
-  width: 300px;
-  border-left: 1px solid #ddd;
-  overflow-y: auto;
-  padding: 20px;
+	100% {
+		background-position: 0 50%;
+	}
 }
 
-.mediagraph-metadata-section {
-  margin-bottom: 20px;
+/* Empty state ------------------------------------------------------------- */
+
+.mg-empty {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	align-items: center;
+	justify-content: center;
+	padding: 64px 24px;
+	text-align: center;
 }
 
-.mediagraph-metadata-section h3 {
-  font-size: 13px;
-  text-transform: uppercase;
-  color: #666;
-  margin: 0 0 12px;
+.mg-empty .dashicons {
+	width: 32px;
+	height: 32px;
+	color: #a7aaad;
+	font-size: 32px;
 }
 
-.mediagraph-metadata-field {
-  margin-bottom: 12px;
+.mg-empty__title {
+	margin: 6px 0 0;
+	font-size: 15px;
+	font-weight: 600;
 }
 
-.mediagraph-metadata-field label {
-  display: block;
-  font-size: 12px;
-  font-weight: 600;
-  margin-bottom: 4px;
-  color: #333;
+.mg-empty__text {
+	max-width: 420px;
+	margin: 0 0 10px;
+	color: #50575e;
 }
 
-.mediagraph-metadata-field input,
-.mediagraph-metadata-field textarea {
-  width: 100%;
-  padding: 6px 8px;
-  border: 1px solid #ccc;
-  border-radius: 3px;
-  font-size: 13px;
+/* Notices ----------------------------------------------------------------- */
+
+.mg-notice {
+	display: flex;
+	gap: 10px;
+	align-items: center;
+	margin: 12px 20px 0;
+	padding: 10px 12px;
+	border-left: 4px solid #72aee6;
+	border-radius: 3px;
 }
 
-.mediagraph-metadata-field textarea {
-  resize: vertical;
-  min-height: 60px;
+.mg-notice--error {
+	background: #fcf0f1;
+	border-left-color: #d63638;
 }
 
-.mediagraph-metadata-field input:read-only,
-.mediagraph-metadata-field textarea:read-only {
-  background: #f7f7f7;
-  color: #666;
+.mg-notice--warning {
+	background: #fcf9e8;
+	border-left-color: #dba617;
 }
 
-.mediagraph-asset-detail-footer {
-  padding: 16px 20px;
-  border-top: 1px solid #ddd;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.mg-notice--info {
+	background: #f0f6fc;
 }
 
-.mediagraph-asset-detail-footer > div {
-  display: flex;
-  gap: 12px;
+.mg-notice__text {
+	flex: 1;
 }
 
-.mediagraph-display-settings {
-  display: flex;
-  gap: 12px;
-  align-items: center;
+.mg-notice__action {
+	color: #2271b1;
+	font-weight: 500;
+	background: none;
+	border: 0;
+	cursor: pointer;
 }
 
-.mediagraph-display-settings label {
-  font-size: 12px;
-  font-weight: 600;
-  margin-right: 4px;
+.mg-notice__dismiss {
+	width: 24px;
+	height: 24px;
+	color: #50575e;
+	font-size: 18px;
+	line-height: 1;
+	background: none;
+	border: 0;
+	cursor: pointer;
 }
+
+/* Details panel ----------------------------------------------------------- */
 
-.mediagraph-display-settings select {
-  padding: 4px 8px;
-  border: 1px solid #ccc;
-  border-radius: 3px;
+.mg-panel {
+	display: flex;
+	flex: 0 0 320px;
+	flex-direction: column;
+	min-height: 0;
+	background: #fff;
+	border-left: 1px solid #e0e0e0;
 }
 
-/* Buttons */
-.mediagraph-button {
-  padding: 8px 16px;
-  border: none;
-  border-radius: 3px;
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 500;
+.mg-panel__header {
+	display: flex;
+	flex: 0 0 auto;
+	gap: 8px;
+	align-items: center;
+	justify-content: space-between;
+	padding: 12px 14px;
+	border-bottom: 1px solid #e0e0e0;
 }
 
-.mediagraph-button-primary {
-  background: #0073aa;
-  color: #fff;
+.mg-panel__title {
+	margin: 0;
+	overflow: hidden;
+	font-size: 13px;
+	font-weight: 600;
+	white-space: nowrap;
+	text-overflow: ellipsis;
 }
 
-.mediagraph-button-primary:hover {
-  background: #005a87;
+.mg-panel__close {
+	width: 26px;
+	height: 26px;
+	color: #50575e;
+	font-size: 18px;
+	line-height: 1;
+	background: none;
+	border: 0;
+	border-radius: 4px;
+	cursor: pointer;
 }
 
-.mediagraph-button-secondary {
-  background: #fff;
-  color: #333;
-  border: 1px solid #ccc;
+.mg-panel__scroll {
+	flex: 1 1 auto;
+	padding: 14px;
+	overflow-y: auto;
 }
 
-.mediagraph-button-secondary:hover {
-  background: #f7f7f7;
+.mg-panel__preview {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	margin-bottom: 14px;
+	overflow: hidden;
+	background: #f0f0f1;
+	border-radius: 4px;
 }
 
-/* Loading State */
-.mediagraph-loading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 80px 40px;
-  font-size: 15px;
-  color: #666;
-  min-height: 300px;
+.mg-panel__preview img,
+.mg-panel__preview video {
+	max-width: 100%;
+	max-height: 220px;
 }
 
-.mediagraph-spinner {
-  display: inline-block;
-  width: 40px;
-  height: 40px;
-  border: 4px solid #f3f3f3;
-  border-top: 4px solid #0073aa;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-  margin-bottom: 16px;
+.mg-panel__preview audio {
+	width: 100%;
+	margin: 12px;
 }
 
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+.mg-panel__preview-empty {
+	padding: 48px 0;
+	color: #a7aaad;
 }
 
-/* Empty State */
-.mediagraph-empty {
-  text-align: center;
-  padding: 60px 20px;
-  color: #666;
+.mg-panel__error {
+	margin: 0 0 12px;
+	color: #8a2424;
 }
 
-.mediagraph-empty-icon {
-  font-size: 48px;
-  margin-bottom: 16px;
-  opacity: 0.5;
+.mg-panel__properties {
+	margin: 0 0 18px;
 }
 
-.mediagraph-empty-message {
-  font-size: 16px;
+.mg-panel__property {
+	display: flex;
+	gap: 10px;
+	padding: 5px 0;
+	border-bottom: 1px solid #f0f0f1;
 }
 
-/* Error State */
-.mediagraph-error {
-  background: #fef7f7;
-  border: 1px solid #e65054;
-  padding: 16px;
-  margin: 20px;
-  border-radius: 4px;
-  color: #e65054;
+.mg-panel__property dt {
+	flex: 0 0 40%;
+	color: #757575;
+	font-size: 11px;
+	text-transform: uppercase;
+	letter-spacing: 0.02em;
 }
 
-/* File Counter */
-.mediagraph-file-counter {
-  font-size: 12px;
-  color: #666;
+.mg-panel__property dd {
+	flex: 1;
+	margin: 0;
+	overflow-wrap: anywhere;
+	font-size: 12px;
 }
 
-/* Sidebar Header */
-.mediagraph-sidebar-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 16px 12px;
-  border-bottom: 1px solid #ddd;
-  margin-bottom: 12px;
+.mg-panel__fields h4 {
+	margin: 0 0 4px;
+	font-size: 13px;
 }
 
-.mediagraph-sidebar-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: #333;
+.mg-panel__help {
+	margin: 0 0 12px;
+	color: #757575;
+	font-size: 11px;
 }
 
-.mediagraph-sidebar-loading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 40px 20px;
-  color: #666;
-  font-size: 13px;
+.mg-field {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	margin-bottom: 12px;
 }
 
-/* Grid Header */
-.mediagraph-grid-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid #eee;
+.mg-field > span:first-child {
+	color: #50575e;
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.02em;
 }
 
-.mediagraph-asset-count {
-  font-size: 13px;
-  color: #666;
+.mg-field input,
+.mg-field textarea,
+.mg-field select {
+	width: 100%;
+	font-size: 13px;
+	border: 1px solid #949494;
+	border-radius: 3px;
 }
 
-/* Reload Button */
-.mediagraph-reload-button {
-  background: none;
-  border: 1px solid #ccc;
-  border-radius: 3px;
-  cursor: pointer;
-  padding: 4px 8px;
-  font-size: 16px;
-  color: #666;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 32px;
-  height: 28px;
-  transition: all 0.2s;
+.mg-field__help {
+	color: #757575;
+	font-size: 11px;
 }
 
-.mediagraph-reload-button:hover:not(:disabled) {
-  background: #f7f7f7;
-  border-color: #999;
-  color: #333;
+.mg-panel__footer {
+	flex: 0 0 auto;
+	padding: 12px 14px;
+	border-top: 1px solid #e0e0e0;
 }
 
-.mediagraph-reload-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+.mg-panel__restricted {
+	display: flex;
+	gap: 6px;
+	align-items: center;
+	margin: 0;
+	color: #8a2424;
+	font-size: 12px;
 }
 
-.mediagraph-reload-icon {
-  font-size: 16px;
-  line-height: 1;
+/* Footer ------------------------------------------------------------------ */
+
+.mg-footer {
+	display: flex;
+	flex: 0 0 auto;
+	gap: 16px;
+	align-items: center;
+	justify-content: space-between;
+	padding: 12px 20px;
+	background: #f6f7f7;
+	border-top: 1px solid #e0e0e0;
 }
 
-.mediagraph-reload-spinner {
-  display: inline-block;
-  width: 14px;
-  height: 14px;
-  border: 2px solid #ccc;
-  border-top: 2px solid #0073aa;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+.mg-footer__status {
+	display: flex;
+	gap: 10px;
+	align-items: center;
+	color: #50575e;
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-  .mediagraph-picker-content {
-    width: 100%;
-    height: 100%;
-    max-width: none;
-    max-height: none;
-    border-radius: 0;
-  }
+.mg-footer__hint {
+	font-style: italic;
+}
 
-  .mediagraph-picker-sidebar {
-    width: 200px;
-  }
+.mg-footer__progress {
+	display: flex;
+	gap: 6px;
+	align-items: center;
+	color: #1e1e1e;
+	font-weight: 500;
+}
 
-  .mediagraph-asset-grid {
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    gap: 12px;
-  }
+.mg-footer__actions {
+	display: flex;
+	gap: 8px;
+}
 
-  .mediagraph-asset-detail {
-    width: 100%;
-    max-width: none;
-  }
+/* Pagination -------------------------------------------------------------- */
 
-  .mediagraph-asset-detail-body {
-    flex-direction: column;
-  }
+.mg-pagination {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	align-items: center;
+	justify-content: center;
+	padding: 18px 20px 24px;
+}
 
-  .mediagraph-asset-detail-metadata {
-    width: 100%;
-    max-height: 300px;
-  }
+.mg-pagination__gap {
+	padding: 0 4px;
+	color: #757575;
 }
 
-/* ========================================
-   Media Modal Integration Styles
-   ======================================== */
+/* Buttons ----------------------------------------------------------------- */
 
-.mediagraph-modal-content {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
+.mg-button {
+	display: inline-flex;
+	gap: 5px;
+	align-items: center;
+	height: 34px;
+	padding: 0 12px;
+	font-size: 13px;
+	white-space: nowrap;
+	border: 1px solid transparent;
+	border-radius: 3px;
+	cursor: pointer;
 }
 
-.mediagraph-inline-picker {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  padding: 16px;
+.mg-button:disabled {
+	opacity: 0.55;
+	cursor: not-allowed;
 }
 
-.mediagraph-inline-header {
-  display: flex;
-  gap: 16px;
-  align-items: center;
-  margin-bottom: 16px;
-  flex-wrap: wrap;
+.mg-button--primary {
+	color: #fff;
+	background: #2271b1;
+	border-color: #2271b1;
 }
 
-.mediagraph-search-container {
-  display: flex;
-  gap: 8px;
-  flex: 1;
-  min-width: 200px;
+.mg-button--primary:not( :disabled ):hover {
+	background: #135e96;
 }
 
-.mediagraph-search-container input {
-  flex: 1;
-  padding: 6px 12px;
-  border: 1px solid #ccc;
-  border-radius: 3px;
+.mg-button--secondary {
+	color: #2271b1;
+	background: #fff;
+	border-color: #2271b1;
 }
 
-.mediagraph-sort-container select {
-  padding: 6px 12px;
-  border: 1px solid #ccc;
-  border-radius: 3px;
+.mg-button--secondary:not( :disabled ):hover {
+	background: #f0f6fc;
 }
 
-.mediagraph-inline-body {
-  flex: 1;
-  overflow-y: auto;
-  min-height: 300px;
+.mg-button--ghost {
+	color: #1e1e1e;
+	background: #fff;
+	border-color: #949494;
 }
 
-.mediagraph-modal-assets {
-  min-height: 200px;
+.mg-button--ghost.is-active {
+	color: #fff;
+	background: #2271b1;
+	border-color: #2271b1;
 }
 
-.mediagraph-modal-loading {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 40px;
-  color: #666;
+.mg-button--link {
+	height: auto;
+	padding: 0;
+	color: #2271b1;
+	text-decoration: underline;
+	background: none;
 }
 
-.mediagraph-modal-loading .spinner {
-  float: none;
-  margin: 0;
+.mg-button--wide {
+	justify-content: center;
+	width: 100%;
 }
 
-.mediagraph-no-assets,
-.mediagraph-error {
-  padding: 40px;
-  text-align: center;
-  color: #666;
+.mg-icon-button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 26px;
+	height: 26px;
+	padding: 0;
+	color: #50575e;
+	background: none;
+	border: 0;
+	border-radius: 3px;
+	cursor: pointer;
 }
 
-.mediagraph-error {
-  color: #d63638;
-  background: #fef7f7;
-  border: 1px solid #d63638;
-  border-radius: 4px;
+.mg-icon-button:hover:not( :disabled ) {
+	background: #e0e0e0;
 }
+
+/* Standalone states ------------------------------------------------------- */
 
-.mediagraph-not-connected {
-  padding: 40px;
-  text-align: center;
+.mg-standalone {
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	gap: 8px;
+	align-items: center;
+	justify-content: center;
+	padding: 64px 32px;
+	text-align: center;
 }
 
-.mediagraph-not-connected h3 {
-  margin-top: 0;
+.mg-standalone__icon {
+	width: 36px;
+	height: 36px;
+	color: #a7aaad;
+	font-size: 36px;
 }
 
-.mediagraph-modal-assets .mediagraph-asset-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-  gap: 12px;
+.mg-standalone__title {
+	margin: 8px 0 0;
+	font-size: 17px;
 }
 
-.mediagraph-modal-asset {
-  position: relative;
-  cursor: pointer;
-  border: 2px solid transparent;
-  border-radius: 4px;
-  overflow: hidden;
-  background: #f7f7f7;
-  transition: border-color 0.2s, transform 0.1s;
+.mg-standalone__text {
+	max-width: 420px;
+	margin: 0 0 12px;
+	color: #50575e;
 }
 
-.mediagraph-modal-asset:hover {
-  border-color: #2271b1;
-  transform: translateY(-2px);
+.mg-standalone__actions {
+	display: flex;
+	gap: 8px;
 }
 
-.mediagraph-modal-asset.selected {
-  border-color: #2271b1;
-  background: #e5f5fa;
-  box-shadow: 0 0 0 3px #2271b1;
+/* Media modal tab --------------------------------------------------------- */
+
+.mediagraph-modal-tab {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	overflow: hidden;
 }
 
-.mediagraph-modal-asset.selected::before {
-  content: '✓';
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  width: 24px;
-  height: 24px;
-  background: #2271b1;
-  color: #fff;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  font-weight: bold;
-  z-index: 10;
+/* The media frame supplies its own title bar and close control, but the header
+   still has to render — it carries Refresh, which must not be hidden. */
+.mediagraph-modal-tab .mg-picker__heading,
+.mediagraph-modal-tab .mg-picker__close {
+	display: none;
 }
 
-.mediagraph-modal-asset.loading {
-  opacity: 0.6;
-  pointer-events: none;
+.mediagraph-modal-tab .mg-picker__header {
+	justify-content: flex-end;
+	padding: 8px 12px;
 }
 
-.mediagraph-modal-asset.loading::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 24px;
-  height: 24px;
-  border: 3px solid #f3f3f3;
-  border-top: 3px solid #2271b1;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+.mediagraph-modal-error {
+	padding: 32px;
+	color: #8a2424;
+	text-align: center;
 }
 
-.mediagraph-modal-asset.restricted {
-  opacity: 0.5;
-  cursor: not-allowed;
+/* Block editor ------------------------------------------------------------ */
+
+/* Height comes from core's own 40px control sizing (see
+   __next40pxDefaultSize on the Button). All this needs to do is stop the
+   inline <img> icon from sitting on the text baseline, which is what left the
+   button looking a couple of pixels short of its neighbours. */
+.components-placeholder .mediagraph-placeholder-button,
+.block-editor-media-placeholder .mediagraph-placeholder-button {
+	display: inline-flex;
+	align-items: center;
+	vertical-align: top;
 }
 
-.mediagraph-asset-thumb {
-  width: 100%;
-  aspect-ratio: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #f0f0f0;
-  overflow: hidden;
+/* Squares the icon off against core's own 20px button icons. */
+.mediagraph-placeholder-button .mediagraph-icon,
+.components-toolbar-button .mediagraph-icon,
+.components-button .mediagraph-icon {
+	display: block;
+	width: 20px;
+	height: 20px;
+	border-radius: 50%;
+	object-fit: contain;
 }
 
-.mediagraph-asset-thumb img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+.mediagraph-legacy-preview {
+	margin-top: 8px;
 }
+
+/* Utilities --------------------------------------------------------------- */
 
-.mediagraph-asset-thumb .dashicons {
-  font-size: 48px;
-  width: 48px;
-  height: 48px;
-  color: #999;
+.mg-spin {
+	animation: mg-rotate 1.1s linear infinite;
 }
 
-.mediagraph-asset-thumb.video-thumb,
-.mediagraph-asset-thumb.audio-thumb {
-  position: relative;
+@keyframes mg-rotate {
+	to {
+		transform: rotate( 360deg );
+	}
 }
 
-.asset-type-badge {
-  position: absolute;
-  bottom: 4px;
-  left: 4px;
-  background: rgba(0, 0, 0, 0.7);
-  color: #fff;
-  font-size: 9px;
-  padding: 2px 6px;
-  border-radius: 2px;
-  text-transform: uppercase;
+@media ( max-width: 960px ) {
+	.mg-sidebar {
+		display: none;
+	}
+
+	.mg-panel {
+		position: absolute;
+		inset: 0 0 0 auto;
+		z-index: 2;
+		flex-basis: min( 360px, 100% );
+		box-shadow: -8px 0 24px rgba( 0, 0, 0, 0.16 );
+	}
+
+	.mg-picker__body {
+		position: relative;
+	}
 }
 
-.mediagraph-modal-asset .restricted-badge {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  background: rgba(214, 54, 56, 0.9);
-  color: #fff;
-  font-size: 9px;
-  padding: 2px 6px;
-  border-radius: 2px;
+@media ( prefers-reduced-motion: reduce ) {
+	.mg-spin,
+	.mg-card--skeleton .mg-card__thumb {
+		animation: none;
+	}
 }
 
-.mediagraph-modal-asset .mediagraph-asset-name {
-  padding: 8px;
-  font-size: 11px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  background: #fff;
+/* Inspector panel ---------------------------------------------------------- */
+
+.mediagraph-panel__notice {
+	margin: 0 0 12px;
 }
 
-.mediagraph-inline-footer {
-  padding-top: 16px;
-  border-top: 1px solid #eee;
-  margin-top: 16px;
+.mediagraph-panel__help {
+	margin: 12px 0 0;
+	color: #757575;
+	font-size: 11px;
+	line-height: 1.5;
 }
 
-.mediagraph-modal-pagination {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.mg-panel__note {
+	margin: 0;
+	color: #50575e;
+	font-size: 12px;
+	text-align: center;
 }
+
+/* Custom metadata group ---------------------------------------------------- */
 
-.pagination-info {
-  color: #666;
-  font-size: 13px;
+/* Spans the whole grid and sits last, separated by a rule, because a library
+   can define many of these and they should never crowd out the standard
+   filters above. */
+.mg-filters__custom {
+	grid-column: 1 / -1;
+	margin-top: 4px;
+	padding-top: 12px;
+	border-top: 1px solid #dcdcde;
 }
 
-.pagination-buttons {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+.mg-filters__custom-title {
+	display: flex;
+	gap: 6px;
+	align-items: center;
+	margin: 0 0 10px;
+	color: #50575e;
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.02em;
 }
 
-.page-indicator {
-  color: #666;
-  font-size: 13px;
+.mg-filters__custom-count {
+	min-width: 18px;
+	padding: 0 5px;
+	color: #50575e;
+	font-size: 11px;
+	line-height: 16px;
+	text-align: center;
+	background: #e0e0e0;
+	border-radius: 9px;
 }
 
-/* Inline mount (e.g. WP media modal "Mediagraph" tab) — fills the host container
-   instead of using fixed positioning. */
-.mediagraph-picker-inline {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  background: #fff;
+.mg-filters__custom-grid {
+	display: grid;
+	grid-template-columns: repeat( auto-fill, minmax( 190px, 1fr ) );
+	gap: 12px 18px;
+	align-items: start;
 }
 
-.mediagraph-picker-inline > .mediagraph-picker-content {
-  width: 100%;
-  max-width: none;
-  height: 100%;
-  border-radius: 0;
-  box-shadow: none;
+/* Brief file facts sit tight under the preview; the fuller Mediagraph detail
+   list below gets normal spacing. */
+.mg-panel__properties--brief {
+	margin-bottom: 16px;
 }
 
-.mediagraph-modal-content {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  display: flex;
-  flex-direction: column;
+.mg-panel__section {
+	padding-top: 14px;
+	border-top: 1px solid #f0f0f1;
 }
 
-.mediagraph-media-modal-picker {
-  flex: 1;
-  display: flex;
-  min-height: 0;
+.mg-panel__section h4 {
+	margin: 0 0 4px;
+	font-size: 13px;
 }

@@ -1,53 +1,34 @@
 # Node
 node_modules/
-npm-debug.log
+npm-debug.log*
 yarn-error.log
-package-lock.json
-yarn.lock
+
+# package-lock.json is deliberately NOT ignored. build-release.sh runs
+# `npm ci`, so the lockfile is what makes two builds of the same tag produce
+# the same bundle.
 
 # Build artifacts
 admin/js/dist/
 *.map
-releases/
 build/
-
-# Dependencies
-vendor/
-composer.lock
+releases/
 
 # IDE
 .vscode/
 .idea/
 *.swp
 *.swo
-*~
 
 # OS
 .DS_Store
 Thumbs.db
-
-# WordPress
-wp-config.php
-wp-content/uploads/
-wp-content/cache/
-wp-content/backup-db/
-wp-content/advanced-cache.php
-wp-content/wp-cache-config.php
-
-# Docker volumes
-.docker/
-
-# Logs
-*.log
-error_log
-debug.log
 
 # Environment
 .env
 .env.local
 .env.*.local
 
-# Temporary files
+# Temporary
 *.tmp
 *.temp
 .cache/

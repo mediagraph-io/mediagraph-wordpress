@@ -1,83 +1,53 @@
 /**
- * Front-end + editor styles for Mediagraph assets.
+ * Front-end styles for assets inserted by plugin version 1.x.
  *
- * WordPress core only ships the legacy float classes globally:
- *
- *   .alignleft  { float: left;  margin-right: 2em; }
- *   .alignright { float: right; margin-left: 2em; }
- *   .aligncenter { clear: both; }
- *
- * Note that `.aligncenter` gets no centering at all — core scopes that to
- * individual blocks (`.wp-block-image.aligncenter { display: table }` plus auto
- * margins). Block themes such as Twenty Twenty-Five add nothing further, so
- * without these rules the Center option silently does nothing while Left and
- * Right appear to work.
+ * 2.0 inserts native core blocks, which the theme already styles. These rules
+ * exist so posts published with 1.x keep their alignment after upgrading —
+ * core only ships the legacy float rules globally, and .aligncenter gets
+ * `clear: both` with no actual centering.
  */
 
-/* Block wrapper owns the alignment when inserted via the Gutenberg block. */
-.wp-block-mediagraph-asset-picker.alignleft {
-    display: table;
-    float: left;
-    margin-right: 2em;
+.wp-block-mediagraph-asset {
+	margin-bottom: 1.5em;
 }
 
-.wp-block-mediagraph-asset-picker.alignright {
-    display: table;
-    float: right;
-    margin-left: 2em;
+.wp-block-mediagraph-asset img,
+.wp-block-mediagraph-asset video,
+.wp-block-mediagraph-asset audio {
+	max-width: 100%;
+	height: auto;
 }
 
-.wp-block-mediagraph-asset-picker.aligncenter {
-    display: table;
-    margin-left: auto;
-    margin-right: auto;
+.mediagraph-asset.alignleft,
+.wp-block-mediagraph-asset.alignleft {
+	float: left;
+	margin-right: 1.5em;
+	margin-bottom: 1em;
 }
 
-/*
- * The media element inside the block carries its own align class as well, so the
- * same HTML works when inserted into the classic editor. Inside the block the
- * wrapper is already handling it — neutralise the inner copy so the two don't
- * compound.
- */
-.wp-block-mediagraph-asset-picker > .alignleft,
-.wp-block-mediagraph-asset-picker > .alignright,
-.wp-block-mediagraph-asset-picker > .aligncenter,
-.wp-block-mediagraph-asset-picker > a > .alignleft,
-.wp-block-mediagraph-asset-picker > a > .alignright,
-.wp-block-mediagraph-asset-picker > a > .aligncenter {
-    float: none;
-    margin-left: 0;
-    margin-right: 0;
+.mediagraph-asset.alignright,
+.wp-block-mediagraph-asset.alignright {
+	float: right;
+	margin-bottom: 1em;
+	margin-left: 1.5em;
 }
 
-/*
- * Classic editor / media modal insertions have no block wrapper, so the align
- * class sits directly on the image or figure. An inline <img> ignores auto
- * margins, which is why centering needs an explicit display here.
- */
-img.mediagraph-asset.aligncenter,
-video.mediagraph-asset.aligncenter,
-audio.mediagraph-asset.aligncenter {
-    display: block;
-    margin-left: auto;
-    margin-right: auto;
-}
-
-a.mediagraph-asset.aligncenter,
-figure.mediagraph-asset.aligncenter {
-    display: table;
-    margin-left: auto;
-    margin-right: auto;
+.mediagraph-asset.aligncenter,
+.wp-block-mediagraph-asset.aligncenter {
+	display: block;
+	margin-right: auto;
+	margin-left: auto;
+	text-align: center;
 }
 
 figure.mediagraph-asset,
-a.mediagraph-asset {
-    max-width: 100%;
+.wp-block-mediagraph-asset figure {
+	margin: 0 0 1.5em;
 }
 
-figure.mediagraph-asset > img,
-figure.mediagraph-asset > a > img,
-a.mediagraph-asset > img {
-    max-width: 100%;
-    height: auto;
+.wp-block-mediagraph-asset figcaption {
+	margin-top: 0.5em;
+	color: #555;
+	font-size: 0.875em;
+	text-align: center;
 }

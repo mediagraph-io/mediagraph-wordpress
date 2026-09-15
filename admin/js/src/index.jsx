@@ -1,103 +1,181 @@
 /**
- * Mediagraph Picker - Main Entry Point
+ * Entry point.
  *
- * This file initializes the React application and mounts it into WordPress
+ * Exposes window.Mediagraph, the single API every other script in the plugin
+ * uses to open the picker. The host container is created on demand, so there
+ * is no PHP-printed div to be missing — 1.x bailed out entirely when its root
+ * element was absent, which silently disabled the picker on the site editor,
+ * widgets screen, and anywhere else the markup was not printed.
  */
 
-import { createRoot } from 'react-dom/client';
-import MediaPicker from './MediaPicker';
+import { createRoot } from '@wordpress/element';
+import { __ } from '@wordpress/i18n';
 
-// Global picker state
-let pickerRoot = null;
-let currentPickerRef = null;
+import Picker from './Picker';
+import Modal from './components/Modal';
+import NotConnected from './components/NotConnected';
+import { isConnected } from './lib/settings';
 
-// Initialize when DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
-  // Get the root element
-  const rootElement = document.getElementById('mediagraph-picker-modal-root');
+const CONTAINER_ID = 'mediagraph-picker-root';
 
-  if (!rootElement) {
-    console.error('Mediagraph picker root element not found');
-    return;
-  }
+let root = null;
+let container = null;
 
-  // Create React root
-  pickerRoot = createRoot(rootElement);
+/**
+ * Get (or create) the DOM node the picker renders into.
+ *
+ * @return {HTMLElement} Container element.
+ */
+function ensureContainer() {
+	if ( container && document.body.contains( container ) ) {
+		return container;
+	}
 
-  // Expose global API for opening the picker
-  window.MediagraphPicker = {
-    open: (editorId = 'content') => {
-      if (!pickerRoot) {
-        console.error('Mediagraph picker not initialized');
-        return;
-      }
+	container = document.getElementById( CONTAINER_ID );
 
-      // Render the picker modal with a ref to control it
-      pickerRoot.render(
-        <MediaPicker
-          editorId={editorId}
-          key={Date.now()} // Force new instance each time
-        />
-      );
-    },
+	if ( ! container ) {
+		container = document.createElement( 'div' );
+		container.id = CONTAINER_ID;
+		document.body.appendChild( container );
+	}
 
-    close: () => {
-      if (pickerRoot) {
-        pickerRoot.render(null);
-      }
-    },
+	root = null;
 
-    /**
-     * Mount the picker inline inside an arbitrary container (e.g. the WP media modal's
-     * Mediagraph tab). The host supplies onAssetReady to receive the downloaded
-     * attachment and apply its own selection logic.
-     *
-     * @param {HTMLElement} container DOM node to mount into
-     * @param {Object}      options
-     * @param {Function}    options.onAssetReady  (asset, { attachmentId, url, assetType, metadata, displaySettings, html }) => void
-     * @returns {{ unmount: Function }}
-     */
-    mountInline: (container, options = {}) => {
-      if (!container) {
-        console.error('Mediagraph picker: mountInline requires a container element');
-        return { unmount: () => {} };
-      }
+	return container;
+}
 
-      const root = createRoot(container);
-      root.render(
-        <MediaPicker
-          inline
-          onAssetReady={options.onAssetReady || null}
-          key={Date.now()}
-        />
-      );
+/**
+ * Get (or create) the React root.
+ *
+ * @return {Object} React root.
+ */
+function ensureRoot() {
+	const node = ensureContainer();
 
-      return {
-        unmount: () => {
-          try {
-            root.unmount();
-          } catch (e) {
-            // Container already gone; ignore
-          }
-        }
-      };
-    }
-  };
+	if ( ! root ) {
+		root = createRoot( node );
+	}
 
-  // Listen for the classic editor Mediagraph button click
-  document.addEventListener('click', (event) => {
-    if (event.target.id === 'mediagraph-picker-button' ||
-        event.target.closest('#mediagraph-picker-button')) {
-      event.preventDefault();
+	return root;
+}
 
-      // Get the editor ID from the button
-      const button = event.target.closest('#mediagraph-picker-button') || event.target;
-      const editorId = button.getAttribute('data-editor') || 'content';
+/**
+ * Close the picker and clear the tree.
+ *
+ * @return {void}
+ */
+function close() {
+	if ( root ) {
+		root.render( null );
+	}
+}
 
-      // Open the picker
-      window.MediagraphPicker.open(editorId);
-    }
-  });
+/**
+ * Open the picker.
+ *
+ * @param {Object}   options              Options.
+ * @param {Array}    options.types        Asset kinds to allow. Empty means all.
+ * @param {boolean}  options.multiple     Allow selecting several assets.
+ * @param {string}   options.title        Modal heading.
+ * @param {string}   options.confirmLabel Insert button label.
+ * @param {Function} options.onSelect     Receives (attachments, failures).
+ * @param {Function} options.onCancel     Called when the user closes without choosing.
+ * @return {void}
+ */
+function open( options = {} ) {
+	const {
+		types = [],
+		multiple = false,
+		title = '',
+		confirmLabel = '',
+		onSelect = () => {},
+		onCancel = () => {},
+	} = options;
 
-  console.log('Mediagraph Assets initialized');
-});
+	const instance = ensureRoot();
+
+	const handleClose = () => {
+		close();
+		onCancel();
+	};
+
+	if ( ! isConnected() ) {
+		instance.render(
+			<Modal onClose={ handleClose } label={ __( 'Mediagraph', 'mediagraph-assets' ) }>
+				<NotConnected onClose={ handleClose } />
+			</Modal>
+		);
+
+		return;
+	}
+
+	instance.render(
+		<Modal onClose={ handleClose } label={ title || __( 'Mediagraph assets', 'mediagraph-assets' ) }>
+			<Picker
+				types={ types }
+				multiple={ multiple }
+				title={ title }
+				confirmLabel={ confirmLabel }
+				onSelect={ ( attachments, failures ) => {
+					close();
+					onSelect( attachments, failures );
+				} }
+				onClose={ handleClose }
+			/>
+		</Modal>
+	);
+}
+
+/**
+ * Mount the picker inline inside a host container, e.g. the media modal tab.
+ *
+ * @param {HTMLElement} node    Host element.
+ * @param {Object}      options Picker options.
+ * @return {Object} Handle with an unmount method.
+ */
+function mountInline( node, options = {} ) {
+	if ( ! node ) {
+		return { unmount: () => {} };
+	}
+
+	const inlineRoot = createRoot( node );
+
+	const render = () => {
+		if ( ! isConnected() ) {
+			inlineRoot.render( <NotConnected onClose={ options.onCancel || ( () => {} ) } /> );
+
+			return;
+		}
+
+		inlineRoot.render(
+			<Picker
+				types={ options.types || [] }
+				multiple={ Boolean( options.multiple ) }
+				title={ options.title || '' }
+				confirmLabel={ options.confirmLabel || '' }
+				onSelect={ options.onSelect || ( () => {} ) }
+				onClose={ options.onCancel || ( () => {} ) }
+			/>
+		);
+	};
+
+	render();
+
+	return {
+		unmount: () => {
+			try {
+				inlineRoot.unmount();
+			} catch ( error ) {
+				// The host removed the node first; nothing to do.
+			}
+		},
+	};
+}
+
+window.Mediagraph = {
+	open,
+	close,
+	mountInline,
+	isConnected,
+	version: '2.0.0',
+};

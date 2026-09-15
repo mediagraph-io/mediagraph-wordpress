@@ -1,170 +1,160 @@
-# Mediagraph WordPress Plugin - Installation Guide
+# Installing the Mediagraph WordPress plugin
 
 ## Requirements
 
-- WordPress 5.8 or higher
-- PHP 7.4 or higher
-- A Mediagraph account with access to at least one organization
+- WordPress 6.0 or newer
+- PHP 7.4 or newer
+- A Mediagraph account with permission to download assets
+- An administrator account on the WordPress site (to connect it)
 
-## Installation Steps
+## Install
 
-### 1. Download the Plugin
+1. Download `mediagraph-assets-vX.Y.Z.zip`.
+2. In WordPress, go to **Plugins → Add New → Upload Plugin**.
+3. Choose the ZIP and select **Install Now**.
+4. Select **Activate Plugin**.
 
-Download the latest version: `mediagraph-picker-v1.1.0.zip`
+## Connect
 
-### 2. Install via WordPress Admin (Recommended)
+1. Go to **Settings → Mediagraph**.
+2. Select **Connect to Mediagraph**.
+3. Sign in to Mediagraph if prompted, and approve the connection.
+4. You are returned to WordPress with the account and organization shown.
 
-1. Log into your WordPress admin panel
-2. Navigate to **Plugins > Add New**
-3. Click the **Upload Plugin** button at the top
-4. Click **Choose File** and select `mediagraph-picker-v1.1.0.zip`
-5. Click **Install Now**
-6. Click **Activate Plugin**
+The connection is **site-wide**: one Mediagraph account backs the whole site.
+Every WordPress user who can edit posts browses through that account, so choose
+an account whose Mediagraph permissions match what the whole editorial team
+should be able to reach.
 
-### 3. Alternative: Manual Installation via FTP
+Access renews itself. If it ever cannot, an admin notice appears with a
+**Reconnect** link, and the picker explains the situation rather than failing
+silently.
 
-1. Unzip `mediagraph-picker-v1.1.0.zip` on your computer
-2. Connect to your WordPress site via FTP
-3. Upload the `mediagraph-picker` folder to `/wp-content/plugins/`
-4. Go to **Plugins** in WordPress admin
-5. Find "Mediagraph File Picker" and click **Activate**
+## Using it
 
-## Configuration
+### Block editor
 
-### Connect to Mediagraph
+Add any media block — Image, Gallery, Audio, Video, Cover, File, Media & Text.
+Alongside **Upload** and **Media Library**, there is a **Mediagraph** button.
 
-1. In WordPress admin, go to **Settings > Mediagraph**
-2. Click the **"Connect to Mediagraph"** button
-3. You'll be redirected to Mediagraph to authorize the connection
-4. Log in with your Mediagraph credentials if not already logged in
-5. Select your Organization (if you have access to multiple)
-6. Click **Authorize**
-7. You'll be redirected back to WordPress with a success message
+The picker only offers files the block can use: a Video block shows videos, an
+Image block shows images. A Gallery block lets you select several at once.
 
-### Switch Organizations (Optional)
+Once a block already has media, the **Mediagraph** button in its toolbar
+replaces it (or, for a gallery, appends to it).
 
-If you have access to multiple Mediagraph organizations:
+Because assets land in your media library as normal attachments, everything in
+the block toolbar works exactly as it does for an uploaded file — crop, rotate,
+resize, alignment, link settings, captions, alt text.
 
-1. Go to **Settings > Mediagraph**
-2. In the **Current Organization** section, click **Switch Organization**
-3. Select a different organization from the dropdown
-4. Your assets from the new organization will now be available
+### Classic editor
 
-### Advanced Settings (Optional)
+Use **Add from Mediagraph** above the editor toolbar. Several assets can be
+inserted at once.
 
-For self-hosted or custom Mediagraph instances:
+### Media modal
 
-1. Go to **Settings > Mediagraph**
-2. Scroll to **Advanced Settings**
-3. Update the **API Base URL** (default: `https://mediagraph.io`)
-4. Click **Save Changes**
-5. Reconnect to Mediagraph
+Anywhere WordPress opens its media modal — including **Set featured image** —
+there is a **Mediagraph** tab beside Media Library.
 
-## Usage
+## In the picker
 
-### Insert Media from Mediagraph
+- **Left:** storage folders, collections, and lightboxes. Sections collapse and
+  remember their state; the arrow expands sub-folders on demand.
+- **Search:** full text across the library.
+- **File type chips:** narrow to images, video, audio, or documents. When a
+  block only accepts certain types this is locked and shown as a note instead.
+- **Filters:** filter by custom metadata fields, and optionally include assets
+  you do not have permission to download.
+- **Info icon** on a tile: full metadata, plus the fields that will be written
+  onto the WordPress media item, plus a download-quality choice.
 
-1. Create or edit a WordPress post or page
-2. Click the **Add Media** button in the editor
-3. Select **"Mediagraph"** from the left sidebar
-4. Browse your assets:
-   - Use the sidebar to navigate Collections, Storage Folders, and Lightboxes
-   - Search using the search box
-   - Sort by Date Uploaded, Date Taken, or Filename
-   - Toggle "Show all files" to see restricted assets
-5. Click an asset to select it (double-click to view details)
-6. In the asset detail view:
-   - Edit caption, alt text, and description (WordPress-local)
-   - Choose alignment, link, and size settings
-7. Click **Insert into Post**
-8. The asset will be inserted at your cursor position
+Selecting is a single click; double-click inserts straight away. A padlock means
+your Mediagraph account cannot download that asset.
 
-### View Where Assets Have Been Published
+## Download quality
 
-After publishing posts with Mediagraph assets:
+The details panel offers only what your account is allowed to download:
 
-1. Log into your Mediagraph account at https://app.mediagraph.io
-2. Open any asset that has been used in a WordPress post
-3. Scroll down to the **Published In** panel
-4. You'll see a list of all articles where this asset has been used, including:
-   - Article title and URL
-   - Publisher and publication information
-   - Publication date
-   - Byline and abstract
-   - Usage context (caption, credit, etc.)
+| Option | What it is |
+|---|---|
+| Original file | The untouched file as stored in Mediagraph |
+| Full size | Web-ready full resolution — recommended |
+| Medium | 1200px |
+| Small | 640px |
+
+WordPress generates its own thumbnail, medium, and large sizes from whatever you
+pick, so **Full size** is usually right. Choosing the same asset again reuses the
+file already in your library instead of downloading another copy.
+
+## Usage reporting
+
+When a post is published or updated, the plugin tells Mediagraph which assets it
+uses, along with the headline, byline, categories, tags, and article text. The
+featured image is reported as the lead photo. Removing an asset from a post
+removes it from the next report.
+
+The result appears as a notice on the post screen. If Mediagraph could not match
+some assets, it says how many and why rather than reporting success.
+
+By default this covers posts and pages. Other post types can be added with the
+`mediagraph_publishable_post_types` filter.
+
+## Self-hosted Mediagraph
+
+Under **Settings → Mediagraph → Configuration**, set **Mediagraph URL** to your
+instance. Changing it clears the existing connection, so reconnect afterwards.
 
 ## Troubleshooting
 
-### Plugin Not Appearing After Upload
+**"Mediagraph is not connected" in the picker**
+An administrator needs to connect the site at Settings → Mediagraph.
 
-- Check that the ZIP file is not corrupted
-- Try manual installation via FTP
-- Check PHP error logs for any issues
+**The connection expired**
+Select Reconnect on the settings screen. Assets already in posts are unaffected.
 
-### "Connect to Mediagraph" Button Not Working
+**A newly created collection is missing**
+The container tree is cached for five minutes. Use the reload icon at the top of
+the sidebar, or **Refresh asset list** on the settings screen.
 
-- Ensure your WordPress site is accessible from the internet (OAuth requires redirect)
-- Check for JavaScript errors in browser console
-- Verify PHP version is 7.4 or higher
+**An asset shows a padlock**
+The connected Mediagraph account does not have download permission for it. This
+is a Mediagraph permission, changed there rather than here.
 
-### Assets Not Loading
+**"The Mediagraph picker did not load"**
+The JavaScript bundle is missing or was blocked. Hard-refresh (Cmd/Ctrl +
+Shift + R). If it persists, reinstall the plugin — an incomplete upload can
+leave `admin/js/dist/` missing.
 
-1. Go to **Settings > Mediagraph**
-2. Click **Test Connection**
-3. If test fails:
-   - Check your internet connection
-   - Verify your Mediagraph account has assets
-   - Try disconnecting and reconnecting
-   - Check browser console for errors
+**Nothing appears in the block toolbar**
+Confirm the site is connected, and that your WordPress role can edit posts.
+Importing files additionally requires the `upload_files` capability.
 
-### Published Metadata Not Appearing in Mediagraph
+### Deeper diagnostics
 
-- Ensure you clicked **Publish** (not just Save Draft)
-- Check WordPress admin notices for any errors
-- Verify your Mediagraph organization has the `published_assets` feature enabled
-- Contact Mediagraph support if the issue persists
+Add to `wp-config.php`:
 
-### Need to Disconnect
+```php
+define( 'WP_DEBUG', true );
+define( 'WP_DEBUG_LOG', true );
+```
 
-1. Go to **Settings > Mediagraph**
-2. Click **Disconnect from Mediagraph**
-3. Your connection will be removed (you can reconnect anytime)
+Mediagraph messages are prefixed `[Mediagraph]` in `wp-content/debug.log`.
+Credentials are redacted. Turn this off again on a production site.
 
-## Support
+## Upgrading from 1.x
 
-For issues or questions:
+Upgrade in place; nothing needs to be reconnected and no published post changes.
 
-- Check our Knowledge Base: https://docs.mediagraph.io
-- Contact Support: support@mediagraph.io
-- Open a Support Ticket in your Mediagraph account
+- Existing posts keep rendering exactly as before.
+- Assets inserted by 1.x appear in the editor as "legacy" blocks with a toolbar
+  button that converts them to a standard Image, Video, or Audio block.
+- Newly inserted assets use native blocks from the start.
+- The picker's **Extended Description** field is gone. It had no destination in
+  WordPress and was always a copy of the description.
 
-## Updates
+## Uninstalling
 
-The plugin will notify you when updates are available. To update:
-
-1. Go to **Plugins** in WordPress admin
-2. Find "Mediagraph File Picker"
-3. Click **Update Now**
-
-Note: Updates are currently manual. Download the latest version from our knowledge base and reinstall following the steps above.
-
-## Uninstallation
-
-To remove the plugin:
-
-1. Go to **Plugins** in WordPress admin
-2. Find "Mediagraph File Picker"
-3. Click **Deactivate**
-4. Click **Delete**
-5. Confirm deletion
-
-Note: This will remove the OAuth connection but will not delete any media files you've inserted into posts.
-
-## Version
-
-Current Version: 1.1.0
-Last Updated: January 2025
-
----
-
-**© 2025 Mediagraph. All rights reserved.**
+Deactivating keeps your connection and settings. Deleting the plugin removes its
+options and disconnects the site. **Your media library is left alone** — every
+imported file and every post that uses one keeps working.
