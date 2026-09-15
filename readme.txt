@@ -100,9 +100,14 @@ Requires a Mediagraph account. See https://www.mediagraph.io
 
 == Building From Source ==
 
-The JavaScript in `admin/js/dist/` is compiled, so this package ships the
-unminified sources it is built from, along with the tooling needed to reproduce
-them. Nothing is obfuscated and no build step is hidden.
+Development happens in the open at
+https://github.com/mediagraph-io/mediagraph-wordpress — that repository is the
+canonical source, and it is also where to report a bug or send a patch.
+
+You do not need it to verify this plugin, though. The JavaScript in
+`admin/js/dist/` is compiled, so this package ships the unminified sources it is
+built from, along with the tooling needed to reproduce them. Nothing is
+obfuscated and no build step is hidden.
 
 * Sources: `admin/js/src/` (the picker and the block editor integration)
 * Tooling: `webpack.config.js`, `babel.config.js`, `package.json`,
