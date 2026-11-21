@@ -127,7 +127,7 @@ class Mediagraph_Ajax {
 		$sub_type  = $this->post_text( 'sub_type' );
 
 		if ( $parent_id <= 0 || '' === $type ) {
-			$this->fail( __( 'A container ID and type are required.', 'mediagraph-assets' ) );
+			$this->fail( __( 'A container ID and type are required.', 'mediagraph' ) );
 		}
 
 		$children = $this->repository->container_children( $parent_id, $type, $sub_type );
@@ -177,7 +177,7 @@ class Mediagraph_Ajax {
 		$asset_id = $this->post_int( 'asset_id' );
 
 		if ( $asset_id <= 0 ) {
-			$this->fail( __( 'An asset ID is required.', 'mediagraph-assets' ) );
+			$this->fail( __( 'An asset ID is required.', 'mediagraph' ) );
 		}
 
 		$this->respond( $this->repository->asset( $asset_id ) );
@@ -216,7 +216,7 @@ class Mediagraph_Ajax {
 		$asset_id = $this->post_int( 'asset_id' );
 
 		if ( $asset_id <= 0 ) {
-			$this->fail( __( 'An asset ID is required.', 'mediagraph-assets' ) );
+			$this->fail( __( 'An asset ID is required.', 'mediagraph' ) );
 		}
 
 		$result = $this->media_library->import( $asset_id, $this->import_args() );
@@ -235,11 +235,11 @@ class Mediagraph_Ajax {
 	public function handle_import_batch() {
 		$this->guard( 'upload_files' );
 
-		$raw = isset( $_POST['asset_ids'] ) ? wp_unslash( $_POST['asset_ids'] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidationSanitization.InputNotSanitized -- decoded and cast below.
+		$raw = isset( $_POST['asset_ids'] ) ? wp_unslash( $_POST['asset_ids'] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- decoded and cast below.
 		$ids = json_decode( (string) $raw, true );
 
 		if ( ! is_array( $ids ) ) {
-			$this->fail( __( 'No assets were selected.', 'mediagraph-assets' ) );
+			$this->fail( __( 'No assets were selected.', 'mediagraph' ) );
 		}
 
 		$ids = array_values( array_unique( array_filter( array_map( 'intval', $ids ) ) ) );
@@ -255,7 +255,7 @@ class Mediagraph_Ajax {
 			$this->fail(
 				sprintf(
 					/* translators: %d: maximum number of assets. */
-					__( 'Select %d assets or fewer at a time.', 'mediagraph-assets' ),
+					__( 'Select %d assets or fewer at a time.', 'mediagraph' ),
 					$limit
 				)
 			);
@@ -304,7 +304,7 @@ class Mediagraph_Ajax {
 			$this->fail(
 				! empty( $failures )
 					? $failures[0]['message']
-					: __( 'None of the selected assets could be imported.', 'mediagraph-assets' )
+					: __( 'None of the selected assets could be imported.', 'mediagraph' )
 			);
 		}
 
@@ -379,7 +379,7 @@ class Mediagraph_Ajax {
 	 */
 	private function post_metadata_map() {
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- guard() verified.
-		$raw = isset( $_POST['metadata'] ) ? wp_unslash( $_POST['metadata'] ) : ''; // phpcs:ignore WordPress.Security.ValidationSanitization.InputNotSanitized -- sanitized below.
+		$raw = isset( $_POST['metadata'] ) ? wp_unslash( $_POST['metadata'] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized below.
 
 		$decoded = json_decode( (string) $raw, true );
 
@@ -412,7 +412,7 @@ class Mediagraph_Ajax {
 	 * @return array
 	 */
 	private function import_args() {
-		$raw = isset( $_POST['metadata'] ) ? wp_unslash( $_POST['metadata'] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidationSanitization.InputNotSanitized -- sanitized below.
+		$raw = isset( $_POST['metadata'] ) ? wp_unslash( $_POST['metadata'] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized below.
 
 		$metadata = $this->clean_metadata( json_decode( (string) $raw, true ) );
 
@@ -449,7 +449,7 @@ class Mediagraph_Ajax {
 
 		if ( ! current_user_can( $capability ) ) {
 			wp_send_json_error(
-				array( 'message' => __( 'You do not have permission to use Mediagraph here.', 'mediagraph-assets' ) ),
+				array( 'message' => __( 'You do not have permission to use Mediagraph here.', 'mediagraph' ) ),
 				403
 			);
 		}
@@ -524,7 +524,7 @@ class Mediagraph_Ajax {
 	 */
 	private function post_types() {
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- guard() verified.
-		$raw = isset( $_POST['types'] ) ? wp_unslash( $_POST['types'] ) : ''; // phpcs:ignore WordPress.Security.ValidationSanitization.InputNotSanitized -- validated below.
+		$raw = isset( $_POST['types'] ) ? wp_unslash( $_POST['types'] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- validated below.
 
 		$types = json_decode( (string) $raw, true );
 
@@ -545,7 +545,7 @@ class Mediagraph_Ajax {
 	 */
 	private function post_rights() {
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- guard() verified.
-		$raw = isset( $_POST['rights'] ) ? wp_unslash( $_POST['rights'] ) : ''; // phpcs:ignore WordPress.Security.ValidationSanitization.InputNotSanitized -- validated below.
+		$raw = isset( $_POST['rights'] ) ? wp_unslash( $_POST['rights'] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- validated below.
 
 		$decoded = json_decode( (string) $raw, true );
 
@@ -566,7 +566,7 @@ class Mediagraph_Ajax {
 	 */
 	private function post_custom_meta() {
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- guard() verified.
-		$raw = isset( $_POST['custom_meta'] ) ? wp_unslash( $_POST['custom_meta'] ) : ''; // phpcs:ignore WordPress.Security.ValidationSanitization.InputNotSanitized -- sanitized below.
+		$raw = isset( $_POST['custom_meta'] ) ? wp_unslash( $_POST['custom_meta'] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized below.
 
 		$decoded = json_decode( (string) $raw, true );
 

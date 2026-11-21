@@ -88,7 +88,7 @@ class Mediagraph_Client {
 		if ( ! $temp_file ) {
 			return new WP_Error(
 				'mediagraph_temp_file',
-				__( 'WordPress could not create a temporary file for the download.', 'mediagraph-assets' )
+				__( 'WordPress could not create a temporary file for the download.', 'mediagraph' )
 			);
 		}
 
@@ -118,7 +118,7 @@ class Mediagraph_Client {
 
 			return new WP_Error(
 				'mediagraph_empty_download',
-				__( 'Mediagraph returned an empty file.', 'mediagraph-assets' )
+				__( 'Mediagraph returned an empty file.', 'mediagraph' )
 			);
 		}
 
@@ -168,7 +168,7 @@ class Mediagraph_Client {
 		if ( ! $this->credentials->has_token() ) {
 			return new WP_Error(
 				'mediagraph_not_connected',
-				__( 'This site is not connected to Mediagraph. Connect it under Settings → Mediagraph.', 'mediagraph-assets' ),
+				__( 'This site is not connected to Mediagraph. Connect it under Settings → Mediagraph.', 'mediagraph' ),
 				array( 'status' => 401 )
 			);
 		}
@@ -176,7 +176,7 @@ class Mediagraph_Client {
 		if ( $this->credentials->is_expired() && ! $this->oauth->refresh() ) {
 			return new WP_Error(
 				'mediagraph_session_expired',
-				__( 'The Mediagraph connection has expired. Reconnect under Settings → Mediagraph.', 'mediagraph-assets' ),
+				__( 'The Mediagraph connection has expired. Reconnect under Settings → Mediagraph.', 'mediagraph' ),
 				array( 'status' => 401 )
 			);
 		}
@@ -282,7 +282,7 @@ class Mediagraph_Client {
 				'mediagraph_unreachable',
 				sprintf(
 					/* translators: %s: underlying transport error. */
-					__( 'Could not reach Mediagraph: %s', 'mediagraph-assets' ),
+					__( 'Could not reach Mediagraph: %s', 'mediagraph' ),
 					$response->get_error_message()
 				)
 			);
@@ -311,7 +311,7 @@ class Mediagraph_Client {
 		if ( null === $data && JSON_ERROR_NONE !== json_last_error() ) {
 			return new WP_Error(
 				'mediagraph_bad_json',
-				__( 'Mediagraph returned a response WordPress could not read.', 'mediagraph-assets' )
+				__( 'Mediagraph returned a response WordPress could not read.', 'mediagraph' )
 			);
 		}
 
@@ -346,32 +346,32 @@ class Mediagraph_Client {
 		switch ( true ) {
 			case 401 === $status:
 				$code    = 'mediagraph_session_expired';
-				$message = __( 'The Mediagraph connection has expired. Reconnect under Settings → Mediagraph.', 'mediagraph-assets' );
+				$message = __( 'The Mediagraph connection has expired. Reconnect under Settings → Mediagraph.', 'mediagraph' );
 				break;
 
 			case 403 === $status:
 				$code    = 'mediagraph_forbidden';
-				$message = __( 'Your Mediagraph account does not have access to this. Check the permissions on the connected account.', 'mediagraph-assets' );
+				$message = __( 'Your Mediagraph account does not have access to this. Check the permissions on the connected account.', 'mediagraph' );
 				break;
 
 			case 404 === $status:
 				$code    = 'mediagraph_not_found';
-				$message = __( 'That asset is no longer available in Mediagraph.', 'mediagraph-assets' );
+				$message = __( 'That asset is no longer available in Mediagraph.', 'mediagraph' );
 				break;
 
 			case 429 === $status:
 				$code    = 'mediagraph_rate_limited';
-				$message = __( 'Mediagraph is rate limiting this site. Wait a moment and try again.', 'mediagraph-assets' );
+				$message = __( 'Mediagraph is rate limiting this site. Wait a moment and try again.', 'mediagraph' );
 				break;
 
 			case $status >= 500:
 				$code    = 'mediagraph_server_error';
-				$message = __( 'Mediagraph had a server error. Try again shortly.', 'mediagraph-assets' );
+				$message = __( 'Mediagraph had a server error. Try again shortly.', 'mediagraph' );
 				break;
 
 			default:
 				$code    = 'mediagraph_request_failed';
-				$message = __( 'Mediagraph rejected the request.', 'mediagraph-assets' );
+				$message = __( 'Mediagraph rejected the request.', 'mediagraph' );
 				break;
 		}
 

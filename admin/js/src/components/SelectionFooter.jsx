@@ -41,21 +41,21 @@ export default function SelectionFooter( {
 						<span>
 							{ sprintf(
 								/* translators: %d: number of selected assets. */
-								__( '%d selected', 'mediagraph-assets' ),
+								__( '%d selected', 'mediagraph' ),
 								count
 							) }
 						</span>
 						{ multiple && (
 							<button type="button" className="mg-button mg-button--link" onClick={ onClear }>
-								{ __( 'Clear selection', 'mediagraph-assets' ) }
+								{ __( 'Clear selection', 'mediagraph' ) }
 							</button>
 						) }
 					</>
 				) : (
 					<span className="mg-footer__hint">
 						{ multiple
-							? __( 'Select the assets you want to add.', 'mediagraph-assets' )
-							: __( 'Select an asset to continue.', 'mediagraph-assets' ) }
+							? __( 'Select the assets you want to add.', 'mediagraph' )
+							: __( 'Select an asset to continue.', 'mediagraph' ) }
 					</span>
 				) }
 			</div>
@@ -67,7 +67,7 @@ export default function SelectionFooter( {
 					onClick={ onCancel }
 					disabled={ busy }
 				>
-					{ __( 'Cancel', 'mediagraph-assets' ) }
+					{ __( 'Cancel', 'mediagraph' ) }
 				</button>
 
 				<button

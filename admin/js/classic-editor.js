@@ -117,7 +117,7 @@
 
 		window.Mediagraph.open( {
 			multiple: true,
-			title: window.wp.i18n.__( 'Add from Mediagraph', 'mediagraph-assets' ),
+			title: window.wp.i18n.__( 'Add from Mediagraph', 'mediagraph' ),
 			onSelect: function ( attachments ) {
 				( attachments || [] ).forEach( function ( attachment ) {
 					insert( buildMarkup( attachment ), editorId );

@@ -23,31 +23,31 @@ export default function NotConnected( { onClose } ) {
 
 			<h2 className="mg-standalone__title">
 				{ expired
-					? __( 'The Mediagraph connection expired', 'mediagraph-assets' )
-					: __( 'Mediagraph is not connected', 'mediagraph-assets' ) }
+					? __( 'The Mediagraph connection expired', 'mediagraph' )
+					: __( 'Mediagraph is not connected', 'mediagraph' ) }
 			</h2>
 
 			<p className="mg-standalone__text">
 				{ canConnect
 					? __(
 							'Reconnect this site to Mediagraph to browse and insert assets.',
-							'mediagraph-assets'
+							'mediagraph'
 					  )
 					: __(
 							'Ask a site administrator to reconnect this site to Mediagraph.',
-							'mediagraph-assets'
+							'mediagraph'
 					  ) }
 			</p>
 
 			<div className="mg-standalone__actions">
 				{ canConnect && settingsUrl && (
 					<a className="mg-button mg-button--primary" href={ settingsUrl }>
-						{ __( 'Open Mediagraph settings', 'mediagraph-assets' ) }
+						{ __( 'Open Mediagraph settings', 'mediagraph' ) }
 					</a>
 				) }
 
 				<button type="button" className="mg-button mg-button--secondary" onClick={ onClose }>
-					{ __( 'Close', 'mediagraph-assets' ) }
+					{ __( 'Close', 'mediagraph' ) }
 				</button>
 			</div>
 		</div>

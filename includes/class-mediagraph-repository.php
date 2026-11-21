@@ -70,13 +70,13 @@ class Mediagraph_Repository {
 	 */
 	public static function rights_classes() {
 		$classes = array(
-			'owned'             => __( 'Owned by organization', 'mediagraph-assets' ),
-			'unlimited'         => __( 'Unlimited use', 'mediagraph-assets' ),
-			'some'              => __( 'Limited use', 'mediagraph-assets' ),
-			'library'           => __( 'Library rights only', 'mediagraph-assets' ),
-			'none'              => __( 'No rights', 'mediagraph-assets' ),
-			'unknown_searched'  => __( 'Rights unknown (searched)', 'mediagraph-assets' ),
-			'unknown_no_search' => __( 'Rights unknown (not searched)', 'mediagraph-assets' ),
+			'owned'             => __( 'Owned by organization', 'mediagraph' ),
+			'unlimited'         => __( 'Unlimited use', 'mediagraph' ),
+			'some'              => __( 'Limited use', 'mediagraph' ),
+			'library'           => __( 'Library rights only', 'mediagraph' ),
+			'none'              => __( 'No rights', 'mediagraph' ),
+			'unknown_searched'  => __( 'Rights unknown (searched)', 'mediagraph' ),
+			'unknown_no_search' => __( 'Rights unknown (not searched)', 'mediagraph' ),
 		);
 
 		/**
@@ -170,7 +170,7 @@ class Mediagraph_Repository {
 		if ( ! isset( self::CONTAINERS[ $type ] ) ) {
 			return new WP_Error(
 				'mediagraph_bad_container',
-				__( 'Unknown container type.', 'mediagraph-assets' )
+				__( 'Unknown container type.', 'mediagraph' )
 			);
 		}
 
@@ -335,7 +335,7 @@ class Mediagraph_Repository {
 		$asset_id = (int) $asset_id;
 
 		if ( $asset_id <= 0 ) {
-			return new WP_Error( 'mediagraph_bad_asset', __( 'Missing asset ID.', 'mediagraph-assets' ) );
+			return new WP_Error( 'mediagraph_bad_asset', __( 'Missing asset ID.', 'mediagraph' ) );
 		}
 
 		$response = $this->client->get( 'api/assets/' . $asset_id, array( 'include_renditions' => 'true' ) );
@@ -599,7 +599,7 @@ class Mediagraph_Repository {
 
 			$node = array(
 				'id'           => (int) $item['id'],
-				'name'         => isset( $item['name'] ) ? (string) $item['name'] : __( '(untitled)', 'mediagraph-assets' ),
+				'name'         => isset( $item['name'] ) ? (string) $item['name'] : __( '(untitled)', 'mediagraph' ),
 				'type'         => $type,
 				'sub_type'     => isset( $item['sub_type'] ) ? (string) $item['sub_type'] : '',
 				'organizer'    => ! empty( $item['organizer'] ),

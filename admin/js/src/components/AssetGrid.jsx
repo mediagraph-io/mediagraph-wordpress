@@ -68,12 +68,12 @@ export default function AssetGrid( {
 		<div className="mg-results">
 			<div className="mg-results__bar">
 				<span className="mg-results__count" aria-live="polite">
-					{ loading ? __( 'Searching…', 'mediagraph-assets' ) : resultRange( page, perPage, total ) }
+					{ loading ? __( 'Searching…', 'mediagraph' ) : resultRange( page, perPage, total ) }
 				</span>
 
 				{ multiple && (
 					<span className="mg-results__hint">
-						{ __( 'Click to select, double-click to insert.', 'mediagraph-assets' ) }
+						{ __( 'Click to select, double-click to insert.', 'mediagraph' ) }
 					</span>
 				) }
 			</div>
@@ -83,21 +83,21 @@ export default function AssetGrid( {
 			) : assets.length === 0 ? (
 				<div className="mg-empty">
 					<span className="dashicons dashicons-search" aria-hidden="true" />
-					<p className="mg-empty__title">{ __( 'No assets found', 'mediagraph-assets' ) }</p>
+					<p className="mg-empty__title">{ __( 'No assets found', 'mediagraph' ) }</p>
 					<p className="mg-empty__text">
 						{ hasFilters
 							? __(
 									'Nothing matches the current search and filters.',
-									'mediagraph-assets'
+									'mediagraph'
 							  )
 							: __(
 									'This location does not contain any assets you can use.',
-									'mediagraph-assets'
+									'mediagraph'
 							  ) }
 					</p>
 					{ hasFilters && (
 						<button type="button" className="mg-button mg-button--secondary" onClick={ onClearFilters }>
-							{ __( 'Clear filters', 'mediagraph-assets' ) }
+							{ __( 'Clear filters', 'mediagraph' ) }
 						</button>
 					) }
 				</div>

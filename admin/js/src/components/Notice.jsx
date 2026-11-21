@@ -37,7 +37,7 @@ export default function Notice( { type = 'info', action = null, onDismiss = null
 					type="button"
 					className="mg-notice__dismiss"
 					onClick={ onDismiss }
-					aria-label={ __( 'Dismiss', 'mediagraph-assets' ) }
+					aria-label={ __( 'Dismiss', 'mediagraph' ) }
 				>
 					<span aria-hidden="true">×</span>
 				</button>

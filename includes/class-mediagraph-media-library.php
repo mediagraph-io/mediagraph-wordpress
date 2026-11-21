@@ -80,7 +80,7 @@ class Mediagraph_Media_Library {
 		$asset_id = (int) $asset_id;
 
 		if ( $asset_id <= 0 ) {
-			return new WP_Error( 'mediagraph_bad_asset', __( 'Missing asset ID.', 'mediagraph-assets' ) );
+			return new WP_Error( 'mediagraph_bad_asset', __( 'Missing asset ID.', 'mediagraph' ) );
 		}
 
 		$args = wp_parse_args(
@@ -102,7 +102,7 @@ class Mediagraph_Media_Library {
 		if ( empty( $asset['downloadable'] ) ) {
 			return new WP_Error(
 				'mediagraph_not_downloadable',
-				__( 'You do not have permission to download this asset from Mediagraph.', 'mediagraph-assets' )
+				__( 'You do not have permission to download this asset from Mediagraph.', 'mediagraph' )
 			);
 		}
 
@@ -112,7 +112,11 @@ class Mediagraph_Media_Library {
 			$existing = $this->find_existing( $asset_id, $rendition );
 
 			if ( $existing ) {
-				$this->apply_metadata( $existing, $asset, $args['metadata'] );
+				// Reusing someone else's attachment must not let a lower-privileged
+				// user rewrite its title, caption, credit or alt text.
+				if ( current_user_can( 'edit_post', $existing ) ) {
+					$this->apply_metadata( $existing, $asset, $args['metadata'] );
+				}
 
 				return $this->payload( $existing, $asset );
 			}
@@ -157,7 +161,7 @@ class Mediagraph_Media_Library {
 		if ( ! $attachment ) {
 			return new WP_Error(
 				'mediagraph_missing_attachment',
-				__( 'The imported file could not be found in the media library.', 'mediagraph-assets' )
+				__( 'The imported file could not be found in the media library.', 'mediagraph' )
 			);
 		}
 
@@ -315,7 +319,7 @@ class Mediagraph_Media_Library {
 				'mediagraph_sideload_failed',
 				sprintf(
 					/* translators: %s: underlying WordPress error. */
-					__( 'WordPress could not add the file to the media library: %s', 'mediagraph-assets' ),
+					__( 'WordPress could not add the file to the media library: %s', 'mediagraph' ),
 					$attachment_id->get_error_message()
 				)
 			);
@@ -340,7 +344,7 @@ class Mediagraph_Media_Library {
 		$title   = $this->first_non_empty( array( $overrides['title'] ?? '', $this->best_title( $asset ) ) );
 		$caption = $this->first_non_empty( array( $overrides['caption'] ?? '', $asset['description'] ?? '' ) );
 		$alt     = $this->first_non_empty( array( $overrides['alt_text'] ?? '', $asset['alt_text'] ?? '', $asset['title'] ?? '' ) );
-		$credit  = $this->first_non_empty( array( $overrides['credit'] ?? '', $asset['credit_line'] ?? '' ) );
+		$credit  = $this->first_non_empty( array( $overrides['credit'] ?? '', $asset['credit_line'] ?? '', $asset['creator'] ?? '' ) );
 
 		$update = array( 'ID' => $attachment_id );
 
@@ -362,6 +366,11 @@ class Mediagraph_Media_Library {
 
 		if ( '' !== $alt ) {
 			update_post_meta( $attachment_id, '_wp_attachment_image_alt', $alt );
+		}
+
+		// Newspack (and the Media Credit plugin) display credits from this key.
+		if ( '' !== $credit ) {
+			update_post_meta( $attachment_id, '_media_credit', $credit );
 		}
 	}
 

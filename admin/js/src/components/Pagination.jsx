@@ -48,14 +48,14 @@ export default function Pagination( { page, totalPages, onChange, disabled } ) {
 	const pages = pageWindow( page, totalPages );
 
 	return (
-		<nav className="mg-pagination" aria-label={ __( 'Asset pages', 'mediagraph-assets' ) }>
+		<nav className="mg-pagination" aria-label={ __( 'Asset pages', 'mediagraph' ) }>
 			<button
 				type="button"
 				className="mg-button mg-button--secondary"
 				onClick={ () => onChange( page - 1 ) }
 				disabled={ disabled || page <= 1 }
 			>
-				{ __( 'Previous', 'mediagraph-assets' ) }
+				{ __( 'Previous', 'mediagraph' ) }
 			</button>
 
 			{ pages[ 0 ] > 1 && (
@@ -84,7 +84,7 @@ export default function Pagination( { page, totalPages, onChange, disabled } ) {
 					aria-current={ number === page ? 'page' : undefined }
 					aria-label={ sprintf(
 						/* translators: %d: page number. */
-						__( 'Page %d', 'mediagraph-assets' ),
+						__( 'Page %d', 'mediagraph' ),
 						number
 					) }
 				>
@@ -114,7 +114,7 @@ export default function Pagination( { page, totalPages, onChange, disabled } ) {
 				onClick={ () => onChange( page + 1 ) }
 				disabled={ disabled || page >= totalPages }
 			>
-				{ __( 'Next', 'mediagraph-assets' ) }
+				{ __( 'Next', 'mediagraph' ) }
 			</button>
 		</nav>
 	);

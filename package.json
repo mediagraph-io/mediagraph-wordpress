@@ -1,6 +1,6 @@
 {
-  "name": "mediagraph-assets",
-  "version": "2.1.0",
+  "name": "mediagraph",
+  "version": "2.1.2",
   "description": "WordPress plugin for browsing and inserting Mediagraph assets",
   "private": true,
   "main": "admin/js/src/index.jsx",

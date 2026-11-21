@@ -1,10 +1,10 @@
-=== Mediagraph Assets ===
-Contributors: mediagraph
+=== Mediagraph ===
+Contributors: damsoftware
 Tags: media, dam, digital asset management, images, gallery
 Requires at least: 6.0
-Tested up to: 7.0
+Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.1.0
+Stable tag: 2.1.2
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -12,7 +12,7 @@ Browse, search, and insert assets from your Mediagraph library without leaving t
 
 == Description ==
 
-Mediagraph Assets connects your WordPress site to your Mediagraph digital asset
+This plugin connects your WordPress site to your Mediagraph digital asset
 library. Editors browse collections, storage folders, and lightboxes from inside
 the editor and insert assets in a couple of clicks.
 
@@ -70,6 +70,8 @@ Once connected, the plugin contacts `https://mediagraph.io` in these cases:
   substantial thing the plugin sends, and it includes: which assets appear and
   how they are used, your site name, the post's title, permalink, publication
   date, excerpt and author display name, and the post's body as plain text.
+  This includes password-protected posts: their full body text is sent, just
+  like any other post's.
 
   The body is included so newsrooms can find the story an asset ran in from
   inside Mediagraph. It is capped at 100,000 characters, and you can shorten or
@@ -162,6 +164,22 @@ controls work. Legacy Mediagraph blocks keep rendering and can be converted
 in-place from the editor toolbar.
 
 == Changelog ==
+
+= 2.1.2 =
+* Security: inserting an asset that is already in the media library no longer
+  rewrites its title, caption, credit, or alt text unless you are allowed to
+  edit that attachment.
+* The credit is now also saved to `_media_credit`, so Newspack and the Media
+  Credit plugin display it automatically.
+* When an asset has no Credit Line, its creator is used as the credit, including
+  when inserting straight from the grid without opening the details panel.
+* The External Service section now states that password-protected posts' body
+  text is sent when the post is reported.
+
+= 2.1.1 =
+* The "connection expired" notice now appears only on the post editor, the
+  media library, and the plugins screen, rather than on every admin page.
+* Corrected the Contributors entry in this readme.
 
 = 2.1.0 =
 * The picker now has a single Insert button, in the footer. The details panel

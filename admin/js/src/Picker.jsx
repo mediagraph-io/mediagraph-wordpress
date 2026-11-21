@@ -411,10 +411,10 @@ export default function Picker( {
 				chosen.length > 1
 					? sprintf(
 							/* translators: %d: number of assets. */
-							__( 'Adding %d assets to your media library…', 'mediagraph-assets' ),
+							__( 'Adding %d assets to your media library…', 'mediagraph' ),
 							chosen.length
 					  )
-					: __( 'Adding to your media library…', 'mediagraph-assets' )
+					: __( 'Adding to your media library…', 'mediagraph' )
 			);
 
 			try {
@@ -469,7 +469,7 @@ export default function Picker( {
 							setImportProgress(
 								sprintf(
 									/* translators: 1: assets done, 2: total assets. */
-									__( 'Added %1$d of %2$d to your media library…', 'mediagraph-assets' ),
+									__( 'Added %1$d of %2$d to your media library…', 'mediagraph' ),
 									attachments.length + failures.length,
 									total
 								)
@@ -520,10 +520,10 @@ export default function Picker( {
 		( config.organization
 			? sprintf(
 					/* translators: %s: organization name. */
-					__( 'Mediagraph — %s', 'mediagraph-assets' ),
+					__( 'Mediagraph — %s', 'mediagraph' ),
 					config.organization
 			  )
-			: __( 'Mediagraph', 'mediagraph-assets' ) );
+			: __( 'Mediagraph', 'mediagraph' ) );
 
 	const insertLabel =
 		confirmLabel ||
@@ -534,11 +534,11 @@ export default function Picker( {
 						'Insert %d asset',
 						'Insert %d assets',
 						selection.length,
-						'mediagraph-assets'
+						'mediagraph'
 					),
 					selection.length
 			  )
-			: __( 'Insert', 'mediagraph-assets' ) );
+			: __( 'Insert', 'mediagraph' ) );
 
 	return (
 		<div className="mg-picker">
@@ -565,15 +565,15 @@ export default function Picker( {
 							aria-hidden="true"
 						/>
 						{ containersLoading
-							? __( 'Refreshing…', 'mediagraph-assets' )
-							: __( 'Refresh', 'mediagraph-assets' ) }
+							? __( 'Refreshing…', 'mediagraph' )
+							: __( 'Refresh', 'mediagraph' ) }
 					</button>
 
 					<button
 						type="button"
 						className="mg-picker__close"
 						onClick={ onClose }
-						aria-label={ __( 'Close the Mediagraph picker', 'mediagraph-assets' ) }
+						aria-label={ __( 'Close the Mediagraph picker', 'mediagraph' ) }
 					>
 						<span aria-hidden="true">×</span>
 					</button>
@@ -643,7 +643,7 @@ export default function Picker( {
 							action={
 								importError.isAuthError && config.settingsUrl
 									? {
-											label: __( 'Open settings', 'mediagraph-assets' ),
+											label: __( 'Open settings', 'mediagraph' ),
 											href: config.settingsUrl,
 									  }
 									: null
@@ -659,11 +659,11 @@ export default function Picker( {
 							action={
 								error.isAuthError && config.settingsUrl
 									? {
-											label: __( 'Open settings', 'mediagraph-assets' ),
+											label: __( 'Open settings', 'mediagraph' ),
 											href: config.settingsUrl,
 									  }
 									: {
-											label: __( 'Try again', 'mediagraph-assets' ),
+											label: __( 'Try again', 'mediagraph' ),
 											onClick: () => setPage( ( value ) => value ),
 									  }
 							}
@@ -676,7 +676,7 @@ export default function Picker( {
 						<Notice type="info">
 							{ __(
 								'Some results were hidden because this block only accepts certain file types.',
-								'mediagraph-assets'
+								'mediagraph'
 							) }
 						</Notice>
 					) }

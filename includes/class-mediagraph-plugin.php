@@ -115,7 +115,6 @@ class Mediagraph_Plugin {
 	 * @return void
 	 */
 	private function register_hooks() {
-		add_action( 'init', array( $this, 'load_textdomain' ) );
 		add_action( 'init', array( $this, 'register_attachment_meta' ) );
 		add_action( 'admin_init', array( Mediagraph_Upgrade::class, 'maybe_upgrade' ) );
 
@@ -129,19 +128,6 @@ class Mediagraph_Plugin {
 
 		add_filter( 'attachment_fields_to_edit', array( $this, 'attachment_fields' ), 10, 2 );
 		add_filter( 'plugin_action_links_' . plugin_basename( MEDIAGRAPH_PLUGIN_FILE ), array( $this, 'plugin_action_links' ) );
-	}
-
-	/**
-	 * Load translations.
-	 *
-	 * @return void
-	 */
-	public function load_textdomain() {
-		load_plugin_textdomain(
-			'mediagraph-assets',
-			false,
-			dirname( plugin_basename( MEDIAGRAPH_PLUGIN_FILE ) ) . '/languages'
-		);
 	}
 
 	/**
@@ -202,14 +188,14 @@ class Mediagraph_Plugin {
 
 		if ( $link ) {
 			$html .= '<br /><a href="' . esc_url( $link ) . '" target="_blank" rel="noopener noreferrer">' .
-				esc_html__( 'Open in Mediagraph', 'mediagraph-assets' ) . '</a>';
+				esc_html__( 'Open in Mediagraph', 'mediagraph' ) . '</a>';
 		}
 
 		$form_fields['mediagraph_guid'] = array(
-			'label' => __( 'Mediagraph GUID', 'mediagraph-assets' ),
+			'label' => __( 'Mediagraph GUID', 'mediagraph' ),
 			'input' => 'html',
 			'html'  => $html,
-			'helps' => __( 'This file was imported from Mediagraph.', 'mediagraph-assets' ),
+			'helps' => __( 'This file was imported from Mediagraph.', 'mediagraph' ),
 		);
 
 		return $form_fields;
@@ -225,7 +211,7 @@ class Mediagraph_Plugin {
 		$settings = sprintf(
 			'<a href="%s">%s</a>',
 			esc_url( Mediagraph_Settings::url() ),
-			esc_html__( 'Settings', 'mediagraph-assets' )
+			esc_html__( 'Settings', 'mediagraph' )
 		);
 
 		array_unshift( $links, $settings );

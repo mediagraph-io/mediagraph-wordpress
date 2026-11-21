@@ -64,7 +64,7 @@ export async function request( action, data = {}, { signal } = {} ) {
 		throw new ApiError(
 			__(
 				'The Mediagraph plugin did not load correctly. Reload the page and try again.',
-				'mediagraph-assets'
+				'mediagraph'
 			),
 			'mediagraph_not_loaded'
 		);
@@ -103,7 +103,7 @@ export async function request( action, data = {}, { signal } = {} ) {
 		throw new ApiError(
 			__(
 				'WordPress could not reach the server. Check your connection and try again.',
-				'mediagraph-assets'
+				'mediagraph'
 			),
 			'mediagraph_network'
 		);
@@ -117,7 +117,7 @@ export async function request( action, data = {}, { signal } = {} ) {
 		throw new ApiError(
 			__(
 				'The server returned a response WordPress could not read.',
-				'mediagraph-assets'
+				'mediagraph'
 			),
 			'mediagraph_bad_response',
 			response.status
@@ -129,7 +129,7 @@ export async function request( action, data = {}, { signal } = {} ) {
 
 		throw new ApiError(
 			detail.message ||
-				__( 'Something went wrong. Please try again.', 'mediagraph-assets' ),
+				__( 'Something went wrong. Please try again.', 'mediagraph' ),
 			detail.code || 'mediagraph_error',
 			response.status
 		);

@@ -226,7 +226,7 @@ class Mediagraph_Publisher {
 					'Reported %d Mediagraph asset used in this post.',
 					'Reported %d Mediagraph assets used in this post.',
 					(int) $result['sent'],
-					'mediagraph-assets'
+					'mediagraph'
 				),
 				(int) $result['sent']
 			);
@@ -234,7 +234,7 @@ class Mediagraph_Publisher {
 			$class   = 'notice-warning';
 			$message = sprintf(
 				/* translators: 1: skipped count, 2: total count, 3: reasons. */
-				__( 'Mediagraph could not record %1$d of %2$d assets used in this post. %3$s', 'mediagraph-assets' ),
+				__( 'Mediagraph could not record %1$d of %2$d assets used in this post. %3$s', 'mediagraph' ),
 				(int) $result['skipped'],
 				(int) $result['sent'],
 				isset( $result['reasons'] ) ? (string) $result['reasons'] : ''
@@ -243,7 +243,7 @@ class Mediagraph_Publisher {
 			$class   = 'notice-error';
 			$message = sprintf(
 				/* translators: %s: error message. */
-				__( 'Mediagraph usage reporting failed: %s', 'mediagraph-assets' ),
+				__( 'Mediagraph usage reporting failed: %s', 'mediagraph' ),
 				isset( $result['message'] ) ? (string) $result['message'] : ''
 			);
 		}
