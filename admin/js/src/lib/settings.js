@@ -17,7 +17,7 @@ const FALLBACK = {
 	canConnect: false,
 	canUpload: false,
 	blocks: {},
-	defaults: { perPage: 40, rendition: 'full' },
+	defaults: { perPage: 40, rendition: 'web' },
 	sortOptions: [],
 	rightsClasses: [],
 	renditions: [],
@@ -74,7 +74,7 @@ export function blockSupport( blockName ) {
  * @return {string} Rendition name.
  */
 export function defaultRendition() {
-	return settings().defaults?.rendition || 'full';
+	return settings().defaults?.rendition || 'web';
 }
 
 /**

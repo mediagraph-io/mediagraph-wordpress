@@ -301,7 +301,7 @@ class Mediagraph_Editor {
 			'blocks'       => $this->block_support(),
 			'defaults'     => array(
 				'perPage'   => 40,
-				'rendition' => (string) apply_filters( 'mediagraph_default_rendition', 'full' ),
+				'rendition' => (string) apply_filters( 'mediagraph_default_rendition', 'web' ),
 			),
 			'rightsClasses' => array_map(
 				static function ( $code, $label ) {
@@ -350,8 +350,13 @@ class Mediagraph_Editor {
 				),
 				array(
 					'value' => 'full',
-					'label' => __( 'Full size (recommended)', 'mediagraph' ),
-					'help'  => __( 'Web-ready full resolution. WordPress generates its own thumbnail sizes from this.', 'mediagraph' ),
+					'label' => __( 'Full resolution', 'mediagraph' ),
+					'help'  => __( 'A JPEG at the original\'s full pixel size. Above 2560px, WordPress keeps this file and also stores a scaled-down copy.', 'mediagraph' ),
+				),
+				array(
+					'value' => 'web',
+					'label' => __( 'Web (2560px, recommended)', 'mediagraph' ),
+					'help'  => __( 'The largest size WordPress uses without keeping a second, full-size copy. Smaller images are never enlarged.', 'mediagraph' ),
 				),
 				array(
 					'value' => 'medium',

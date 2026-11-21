@@ -424,7 +424,7 @@ class Mediagraph_Ajax {
 		}
 
 		return array(
-			'rendition' => $this->post_text( 'rendition', 'full' ),
+			'rendition' => $this->post_text( 'rendition', 'web' ),
 			'post_id'   => $post_id,
 			'metadata'  => $metadata,
 			'force'     => '1' === $this->post_text( 'force' ),

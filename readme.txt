@@ -4,7 +4,7 @@ Tags: media, dam, digital asset management, images, gallery
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.1.2
+Stable tag: 2.2.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -151,6 +151,10 @@ explains the situation instead of failing silently.
 
 == Upgrade Notice ==
 
+= 2.2.0 =
+Images now come in at 2560px by default instead of full resolution, so
+WordPress no longer stores a full-size original next to its scaled copy.
+
 = 2.1.0 =
 Housekeeping and interface fixes. The package now ships the JavaScript sources
 and build tooling, and the readme documents exactly what the plugin sends to
@@ -164,6 +168,14 @@ controls work. Legacy Mediagraph blocks keep rendering and can be converted
 in-place from the editor toolbar.
 
 == Changelog ==
+
+= 2.2.0 =
+* New default download quality: Web (2560px). 2560px is the largest image
+  WordPress uses as-is. Larger images make WordPress keep the full-size file
+  and add a "-scaled" copy, so inserting at Full resolution stored two large
+  files per image. Smaller images are never enlarged. Full resolution, Medium
+  and Small are still available in the picker, and the
+  mediagraph_default_rendition filter can still change the default.
 
 = 2.1.2 =
 * Security: inserting an asset that is already in the media library no longer

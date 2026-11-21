@@ -37,7 +37,20 @@ class Mediagraph_Media_Library {
 	 *
 	 * @var array
 	 */
-	const RENDITIONS = array( 'original', 'full', 'medium', 'small' );
+	const RENDITIONS = array( 'original', 'full', 'web', 'medium', 'small' );
+
+	/**
+	 * Longest side of the "web" rendition.
+	 *
+	 * 2560 is WordPress's big_image_size_threshold. A larger image makes
+	 * WordPress keep the file it was given and add a "-scaled" copy, doubling
+	 * the storage; at 2560 or below it keeps a single file. "web" is not a
+	 * Mediagraph size: it is "full" with max_dimension, which the server
+	 * applies without ever upscaling.
+	 *
+	 * @var int
+	 */
+	const WEB_MAX_DIMENSION = 2560;
 
 	/**
 	 * HTTP client.
@@ -69,7 +82,7 @@ class Mediagraph_Media_Library {
 	 *
 	 * @param int   $asset_id  Mediagraph asset ID.
 	 * @param array $args      { Optional.
-	 *     @type string $rendition Requested rendition. Default 'full'.
+	 *     @type string $rendition Requested rendition. Default 'web'.
 	 *     @type int    $post_id   Post to attach to.
 	 *     @type array  $metadata  Editor overrides for title/caption/alt.
 	 *     @type bool   $force     Re-download even if already imported.
@@ -86,7 +99,7 @@ class Mediagraph_Media_Library {
 		$args = wp_parse_args(
 			$args,
 			array(
-				'rendition' => 'full',
+				'rendition' => 'web',
 				'post_id'   => 0,
 				'metadata'  => array(),
 				'force'     => false,
@@ -276,13 +289,17 @@ class Mediagraph_Media_Library {
 		require_once ABSPATH . 'wp-admin/includes/media.php';
 		require_once ABSPATH . 'wp-admin/includes/image.php';
 
-		$temp_file = $this->client->download(
-			'api/assets/' . (int) $asset['id'] . '/download',
-			array(
-				'size' => $rendition,
-				'via'  => 'wordpress',
-			)
+		$query = array(
+			'size' => $rendition,
+			'via'  => 'wordpress',
 		);
+
+		if ( 'web' === $rendition ) {
+			$query['size']          = 'full';
+			$query['max_dimension'] = self::WEB_MAX_DIMENSION;
+		}
+
+		$temp_file = $this->client->download( 'api/assets/' . (int) $asset['id'] . '/download', $query );
 
 		if ( is_wp_error( $temp_file ) ) {
 			return $temp_file;
@@ -390,7 +407,7 @@ class Mediagraph_Media_Library {
 			? $asset['renditions']
 			: array();
 
-		$requested = in_array( $requested, self::RENDITIONS, true ) ? $requested : 'full';
+		$requested = in_array( $requested, self::RENDITIONS, true ) ? $requested : 'web';
 
 		if ( empty( $available ) ) {
 			// The detail endpoint did not report renditions; trust the request.

@@ -3,7 +3,7 @@
  * Plugin Name: Mediagraph
  * Plugin URI: https://www.mediagraph.io/wordpress-plugin
  * Description: Browse, search, and insert assets from your Mediagraph library directly inside the WordPress editor. Mediagraph assets become ordinary WordPress attachments, so every native block control keeps working.
- * Version: 2.1.2
+ * Version: 2.2.0
  * Author: Mediagraph
  * Author URI: https://www.mediagraph.io
  * License: GPL-2.0+
@@ -25,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'MEDIAGRAPH_VERSION', '2.1.2' );
+define( 'MEDIAGRAPH_VERSION', '2.2.0' );
 define( 'MEDIAGRAPH_PLUGIN_FILE', __FILE__ );
 define( 'MEDIAGRAPH_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'MEDIAGRAPH_PLUGIN_URL', plugin_dir_url( __FILE__ ) );

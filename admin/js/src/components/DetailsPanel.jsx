@@ -60,7 +60,7 @@ export default function DetailsPanel( {
 	onAnnotate = () => {},
 	onClose,
 	renditions = [],
-	rendition = 'full',
+	rendition = 'web',
 	onRenditionChange = () => {},
 	multiple = false,
 	selectedCount = 0,

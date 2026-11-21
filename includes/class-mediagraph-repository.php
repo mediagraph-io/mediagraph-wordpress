@@ -711,21 +711,44 @@ class Mediagraph_Repository {
 	 */
 	private function download_sizes( array $asset ) {
 		if ( ! empty( $asset['download_sizes'] ) && is_array( $asset['download_sizes'] ) ) {
-			return array_values( array_filter( array_map( 'strval', $asset['download_sizes'] ) ) );
+			$sizes = array_values( array_filter( array_map( 'strval', $asset['download_sizes'] ) ) );
+		} else {
+			// The renditions list names the 1200px preview "permalink"; the
+			// download endpoint calls the same thing "medium".
+			$names = $this->rendition_names( isset( $asset['renditions'] ) ? $asset['renditions'] : array() );
+
+			$sizes = array_values(
+				array_map(
+					static function ( $name ) {
+						return 'permalink' === $name ? 'medium' : $name;
+					},
+					$names
+				)
+			);
 		}
 
-		// The renditions list names the 1200px preview "permalink"; the
-		// download endpoint calls the same thing "medium".
-		$names = $this->rendition_names( isset( $asset['renditions'] ) ? $asset['renditions'] : array() );
+		return $this->with_web_rendition( $sizes );
+	}
 
-		return array_values(
-			array_map(
-				static function ( $name ) {
-					return 'permalink' === $name ? 'medium' : $name;
-				},
-				$names
-			)
-		);
+	/**
+	 * Add the plugin's "web" rendition right after "full".
+	 *
+	 * "web" is "full" capped at 2560px, so anyone allowed to download full may
+	 * download it too.
+	 *
+	 * @param array $sizes Size names, largest first.
+	 * @return array
+	 */
+	private function with_web_rendition( array $sizes ) {
+		$index = array_search( 'full', $sizes, true );
+
+		if ( false === $index || in_array( 'web', $sizes, true ) ) {
+			return $sizes;
+		}
+
+		array_splice( $sizes, $index + 1, 0, array( 'web' ) );
+
+		return $sizes;
 	}
 
 	/**
