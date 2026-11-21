@@ -176,6 +176,8 @@ in-place from the editor toolbar.
   files per image. Smaller images are never enlarged. Full resolution, Medium
   and Small are still available in the picker, and the
   mediagraph_default_rendition filter can still change the default.
+  Mediagraph does the resize when it supports it; otherwise the plugin
+  resizes with WordPress's own image editor before adding the file.
 
 = 2.1.2 =
 * Security: inserting an asset that is already in the media library no longer

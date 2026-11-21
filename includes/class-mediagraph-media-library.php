@@ -305,6 +305,10 @@ class Mediagraph_Media_Library {
 			return $temp_file;
 		}
 
+		if ( 'web' === $rendition ) {
+			$temp_file = $this->cap_dimensions( $temp_file, self::WEB_MAX_DIMENSION );
+		}
+
 		$file_array = array(
 			'name'     => $this->filename_for( $asset, $rendition, $temp_file ),
 			'tmp_name' => $temp_file,
@@ -501,6 +505,59 @@ class Mediagraph_Media_Library {
 		}
 
 		return '';
+	}
+
+	/**
+	 * Shrink an image so its longest side is at most $max pixels.
+	 *
+	 * Mediagraph servers that support max_dimension already did this, and the
+	 * file passes through untouched. Older servers ignore the parameter and
+	 * send full resolution. Without this step that file would be stored as the
+	 * "web" rendition, and deduplication would keep reusing it.
+	 *
+	 * Anything that cannot be read or resized is returned unchanged; WordPress
+	 * then falls back to its own "-scaled" handling.
+	 *
+	 * @param string $file Downloaded temp file.
+	 * @param int    $max  Longest side, in pixels.
+	 * @return string Path of the file to sideload.
+	 */
+	private function cap_dimensions( $file, $max ) {
+		$mime = $this->detect_mime( $file );
+
+		if ( ! in_array( $mime, array( 'image/jpeg', 'image/png', 'image/webp' ), true ) ) {
+			return $file;
+		}
+
+		$editor = wp_get_image_editor( $file, array( 'mime_type' => $mime ) );
+
+		if ( is_wp_error( $editor ) ) {
+			return $file;
+		}
+
+		$size = $editor->get_size();
+
+		if ( empty( $size['width'] ) || max( $size['width'], $size['height'] ) <= $max ) {
+			return $file;
+		}
+
+		$editor->set_quality( 90 );
+
+		$resized = $editor->resize( $max, $max, false );
+
+		if ( is_wp_error( $resized ) ) {
+			return $file;
+		}
+
+		$saved = $editor->save( $file . '.' . $this->extension_for_mime( $mime ), $mime );
+
+		if ( is_wp_error( $saved ) || empty( $saved['path'] ) || ! file_exists( $saved['path'] ) ) {
+			return $file;
+		}
+
+		wp_delete_file( $file );
+
+		return $saved['path'];
 	}
 
 	/**
