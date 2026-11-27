@@ -90,7 +90,7 @@
 					$( '<div class="mediagraph-modal-error"></div>' ).text(
 						__(
 							'The Mediagraph picker did not load. Reload the page and try again.',
-							'mediagraph-assets'
+							'mediagraph'
 						)
 					)
 				);
@@ -303,7 +303,7 @@
 
 			routerView.set( {
 				mediagraph: {
-					text: __( 'Mediagraph', 'mediagraph-assets' ),
+					text: __( 'Mediagraph', 'mediagraph' ),
 					priority: 60,
 				},
 			} );

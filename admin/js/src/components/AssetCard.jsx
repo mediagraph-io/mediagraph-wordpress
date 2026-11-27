@@ -93,7 +93,7 @@ export default function AssetCard( { asset, selected, multiple, onToggle, onActi
 					) }
 
 					{ restricted && (
-						<span className="mg-card__lock" title={ __( 'You cannot download this asset', 'mediagraph-assets' ) }>
+						<span className="mg-card__lock" title={ __( 'You cannot download this asset', 'mediagraph' ) }>
 							<span className="dashicons dashicons-lock" aria-hidden="true" />
 						</span>
 					) }
@@ -101,7 +101,7 @@ export default function AssetCard( { asset, selected, multiple, onToggle, onActi
 
 				<div className="mg-card__body">
 					<span className="mg-card__name" title={ asset.filename }>
-						{ asset.filename || __( 'Untitled', 'mediagraph-assets' ) }
+						{ asset.filename || __( 'Untitled', 'mediagraph' ) }
 					</span>
 					{ meta.length > 0 && <span className="mg-card__meta">{ meta.join( ' · ' ) }</span> }
 				</div>

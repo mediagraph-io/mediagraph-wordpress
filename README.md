@@ -1,4 +1,4 @@
-# Mediagraph Assets for WordPress
+# Mediagraph for WordPress
 
 Browse, search, and insert assets from your [Mediagraph](https://www.mediagraph.io)
 library without leaving the WordPress editor.

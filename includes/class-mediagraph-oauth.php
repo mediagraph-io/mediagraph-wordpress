@@ -83,8 +83,8 @@ class Mediagraph_OAuth {
 	public function register_callback_page() {
 		add_submenu_page(
 			'',
-			__( 'Connecting to Mediagraph', 'mediagraph-assets' ),
-			__( 'Connecting to Mediagraph', 'mediagraph-assets' ),
+			__( 'Connecting to Mediagraph', 'mediagraph' ),
+			__( 'Connecting to Mediagraph', 'mediagraph' ),
 			'manage_options',
 			'mediagraph-callback',
 			array( $this, 'render_callback_page' )
@@ -100,7 +100,7 @@ class Mediagraph_OAuth {
 	 * @return void
 	 */
 	public function render_callback_page() {
-		echo '<div class="wrap"><h1>' . esc_html__( 'Connecting to Mediagraph…', 'mediagraph-assets' ) . '</h1></div>';
+		echo '<div class="wrap"><h1>' . esc_html__( 'Connecting to Mediagraph…', 'mediagraph' ) . '</h1></div>';
 	}
 
 	/**
@@ -126,7 +126,7 @@ class Mediagraph_OAuth {
 		check_admin_referer( 'mediagraph_connect' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You do not have permission to connect this site to Mediagraph.', 'mediagraph-assets' ) );
+			wp_die( esc_html__( 'You do not have permission to connect this site to Mediagraph.', 'mediagraph' ) );
 		}
 
 		$state    = wp_generate_password( 40, false, false );
@@ -152,7 +152,10 @@ class Mediagraph_OAuth {
 			trailingslashit( $this->credentials->browser_base_url() ) . 'oauth/authorize'
 		);
 
-		wp_redirect( $url );
+		// Deliberate off-site redirect to the Mediagraph authorization server.
+		// wp_safe_redirect() only permits the site's own host, which would break
+		// the OAuth handshake.
+		wp_redirect( $url ); // phpcs:ignore WordPress.Security.SafeRedirect.wp_redirect_wp_redirect -- see above.
 		exit;
 	}
 
@@ -168,7 +171,7 @@ class Mediagraph_OAuth {
 		}
 
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You do not have permission to connect this site to Mediagraph.', 'mediagraph-assets' ) );
+			wp_die( esc_html__( 'You do not have permission to connect this site to Mediagraph.', 'mediagraph' ) );
 		}
 
 		// phpcs:disable WordPress.Security.NonceVerification.Recommended
@@ -185,18 +188,18 @@ class Mediagraph_OAuth {
 		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 
 		if ( '' === $code ) {
-			$this->fail( __( 'Mediagraph did not return an authorization code.', 'mediagraph-assets' ) );
+			$this->fail( __( 'Mediagraph did not return an authorization code.', 'mediagraph' ) );
 		}
 
 		$handshake = get_transient( $this->handshake_key() );
 		delete_transient( $this->handshake_key() );
 
 		if ( ! is_array( $handshake ) || empty( $handshake['state'] ) || empty( $handshake['verifier'] ) ) {
-			$this->fail( __( 'This connection attempt expired. Please click Connect and finish authorizing within 15 minutes.', 'mediagraph-assets' ) );
+			$this->fail( __( 'This connection attempt expired. Please click Connect and finish authorizing within 15 minutes.', 'mediagraph' ) );
 		}
 
 		if ( ! hash_equals( (string) $handshake['state'], $state ) ) {
-			$this->fail( __( 'The security check on the Mediagraph response failed. Please try connecting again.', 'mediagraph-assets' ) );
+			$this->fail( __( 'The security check on the Mediagraph response failed. Please try connecting again.', 'mediagraph' ) );
 		}
 
 		$tokens = $this->request_tokens( array(
@@ -318,7 +321,7 @@ class Mediagraph_OAuth {
 			$error   = is_array( $data ) && ! empty( $data['error'] ) ? (string) $data['error'] : 'token_request_failed';
 			$message = is_array( $data ) && ! empty( $data['error_description'] )
 				? (string) $data['error_description']
-				: __( 'Mediagraph rejected the token request.', 'mediagraph-assets' );
+				: __( 'Mediagraph rejected the token request.', 'mediagraph' );
 
 			Mediagraph_Logger::error(
 				'Token endpoint returned an error',

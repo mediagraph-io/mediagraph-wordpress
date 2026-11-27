@@ -81,8 +81,8 @@ export default function Toolbar( {
 					type="search"
 					value={ draft }
 					onChange={ ( event ) => setDraft( event.target.value ) }
-					placeholder={ __( 'Search assets…', 'mediagraph-assets' ) }
-					aria-label={ __( 'Search assets', 'mediagraph-assets' ) }
+					placeholder={ __( 'Search assets…', 'mediagraph' ) }
+					aria-label={ __( 'Search assets', 'mediagraph' ) }
 					className="mg-toolbar__input"
 				/>
 				{ draft && (
@@ -90,19 +90,19 @@ export default function Toolbar( {
 						type="button"
 						className="mg-toolbar__clear"
 						onClick={ () => setDraft( '' ) }
-						aria-label={ __( 'Clear search', 'mediagraph-assets' ) }
+						aria-label={ __( 'Clear search', 'mediagraph' ) }
 					>
 						<span aria-hidden="true">×</span>
 					</button>
 				) }
 			</div>
 
-			<div className="mg-toolbar__kinds" role="group" aria-label={ __( 'File type', 'mediagraph-assets' ) }>
+			<div className="mg-toolbar__kinds" role="group" aria-label={ __( 'File type', 'mediagraph' ) }>
 				{ locked ? (
 					<span className="mg-chip mg-chip--locked">
 						{ sprintf(
 							/* translators: %s: list of file types. */
-							__( 'Showing %s only', 'mediagraph-assets' ),
+							__( 'Showing %s only', 'mediagraph' ),
 							lockedTypes.map( kindLabel ).join( ', ' )
 						) }
 					</span>
@@ -129,12 +129,12 @@ export default function Toolbar( {
 					aria-expanded={ filtersOpen }
 				>
 					<span className="dashicons dashicons-filter" aria-hidden="true" />
-					{ __( 'Filters', 'mediagraph-assets' ) }
+					{ __( 'Filters', 'mediagraph' ) }
 					{ filterCount > 0 && <span className="mg-badge">{ filterCount }</span> }
 				</button>
 
 				<label className="screen-reader-text" htmlFor="mg-sort">
-					{ __( 'Sort by', 'mediagraph-assets' ) }
+					{ __( 'Sort by', 'mediagraph' ) }
 				</label>
 				<select
 					id="mg-sort"
@@ -151,7 +151,7 @@ export default function Toolbar( {
 
 				{ hasFilters && (
 					<button type="button" className="mg-button mg-button--link" onClick={ onClearFilters }>
-						{ __( 'Clear all', 'mediagraph-assets' ) }
+						{ __( 'Clear all', 'mediagraph' ) }
 					</button>
 				) }
 			</div>

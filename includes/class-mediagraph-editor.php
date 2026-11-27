@@ -182,7 +182,7 @@ class Mediagraph_Editor {
 			true
 		);
 
-		wp_set_script_translations( 'mediagraph-picker', 'mediagraph-assets', MEDIAGRAPH_PLUGIN_DIR . 'languages' );
+		wp_set_script_translations( 'mediagraph-picker', 'mediagraph', MEDIAGRAPH_PLUGIN_DIR . 'languages' );
 
 		// wp_localize_script() casts every top-level value to a string, which
 		// turns booleans into '1' and ''. Those happen to coerce correctly in
@@ -206,7 +206,7 @@ class Mediagraph_Editor {
 			true
 		);
 
-		wp_set_script_translations( 'mediagraph-blocks', 'mediagraph-assets', MEDIAGRAPH_PLUGIN_DIR . 'languages' );
+		wp_set_script_translations( 'mediagraph-blocks', 'mediagraph', MEDIAGRAPH_PLUGIN_DIR . 'languages' );
 
 		// Legacy mediagraph/asset-picker block, so 1.x posts still edit.
 		wp_enqueue_script(
@@ -301,7 +301,7 @@ class Mediagraph_Editor {
 			'blocks'       => $this->block_support(),
 			'defaults'     => array(
 				'perPage'   => 40,
-				'rendition' => (string) apply_filters( 'mediagraph_default_rendition', 'full' ),
+				'rendition' => (string) apply_filters( 'mediagraph_default_rendition', 'web' ),
 			),
 			'rightsClasses' => array_map(
 				static function ( $code, $label ) {
@@ -316,27 +316,27 @@ class Mediagraph_Editor {
 			'sortOptions'  => array(
 				array(
 					'value' => 'created_at:desc',
-					'label' => __( 'Date added (newest)', 'mediagraph-assets' ),
+					'label' => __( 'Date added (newest)', 'mediagraph' ),
 				),
 				array(
 					'value' => 'created_at:asc',
-					'label' => __( 'Date added (oldest)', 'mediagraph-assets' ),
+					'label' => __( 'Date added (oldest)', 'mediagraph' ),
 				),
 				array(
 					'value' => 'captured_at:desc',
-					'label' => __( 'Date created (newest)', 'mediagraph-assets' ),
+					'label' => __( 'Date created (newest)', 'mediagraph' ),
 				),
 				array(
 					'value' => 'captured_at:asc',
-					'label' => __( 'Date created (oldest)', 'mediagraph-assets' ),
+					'label' => __( 'Date created (oldest)', 'mediagraph' ),
 				),
 				array(
 					'value' => 'filename:asc',
-					'label' => __( 'Filename (A–Z)', 'mediagraph-assets' ),
+					'label' => __( 'Filename (A–Z)', 'mediagraph' ),
 				),
 				array(
 					'value' => 'filename:desc',
-					'label' => __( 'Filename (Z–A)', 'mediagraph-assets' ),
+					'label' => __( 'Filename (Z–A)', 'mediagraph' ),
 				),
 			),
 			// These match the sizes Mediagraph's download endpoint accepts. The
@@ -345,22 +345,27 @@ class Mediagraph_Editor {
 			'renditions'   => array(
 				array(
 					'value' => 'original',
-					'label' => __( 'Original file', 'mediagraph-assets' ),
-					'help'  => __( 'The untouched file as stored in Mediagraph.', 'mediagraph-assets' ),
+					'label' => __( 'Original file', 'mediagraph' ),
+					'help'  => __( 'The untouched file as stored in Mediagraph.', 'mediagraph' ),
 				),
 				array(
 					'value' => 'full',
-					'label' => __( 'Full size (recommended)', 'mediagraph-assets' ),
-					'help'  => __( 'Web-ready full resolution. WordPress generates its own thumbnail sizes from this.', 'mediagraph-assets' ),
+					'label' => __( 'Full resolution', 'mediagraph' ),
+					'help'  => __( 'A JPEG at the original\'s full pixel size. Above 2560px, WordPress keeps this file and also stores a scaled-down copy.', 'mediagraph' ),
+				),
+				array(
+					'value' => 'web',
+					'label' => __( 'Web (2560px, recommended)', 'mediagraph' ),
+					'help'  => __( 'The largest size WordPress uses without keeping a second, full-size copy. Smaller images are never enlarged.', 'mediagraph' ),
 				),
 				array(
 					'value' => 'medium',
-					'label' => __( 'Medium (1200px)', 'mediagraph-assets' ),
+					'label' => __( 'Medium (1200px)', 'mediagraph' ),
 					'help'  => '',
 				),
 				array(
 					'value' => 'small',
-					'label' => __( 'Small (640px)', 'mediagraph-assets' ),
+					'label' => __( 'Small (640px)', 'mediagraph' ),
 					'help'  => '',
 				),
 			),
@@ -381,7 +386,7 @@ class Mediagraph_Editor {
 		printf(
 			'<button type="button" class="button mediagraph-classic-button" data-editor="%1$s"><span class="dashicons dashicons-format-gallery" aria-hidden="true"></span> %2$s</button>',
 			esc_attr( $editor_id ),
-			esc_html__( 'Add from Mediagraph', 'mediagraph-assets' )
+			esc_html__( 'Add from Mediagraph', 'mediagraph' )
 		);
 	}
 }

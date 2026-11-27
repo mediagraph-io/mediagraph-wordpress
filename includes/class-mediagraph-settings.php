@@ -90,8 +90,8 @@ class Mediagraph_Settings {
 	 */
 	public function add_menu() {
 		add_options_page(
-			__( 'Mediagraph', 'mediagraph-assets' ),
-			__( 'Mediagraph', 'mediagraph-assets' ),
+			__( 'Mediagraph', 'mediagraph' ),
+			__( 'Mediagraph', 'mediagraph' ),
 			'manage_options',
 			self::PAGE,
 			array( $this, 'render' )
@@ -142,7 +142,7 @@ class Mediagraph_Settings {
 			add_settings_error(
 				Mediagraph_Credentials::API_BASE_URL,
 				'mediagraph_bad_url',
-				__( 'The Mediagraph URL must start with http:// or https://.', 'mediagraph-assets' )
+				__( 'The Mediagraph URL must start with http:// or https://.', 'mediagraph' )
 			);
 
 			return $this->credentials->api_base_url();
@@ -155,7 +155,7 @@ class Mediagraph_Settings {
 			add_settings_error(
 				Mediagraph_Credentials::API_BASE_URL,
 				'mediagraph_url_changed',
-				__( 'The Mediagraph URL changed, so the previous connection was cleared. Connect again below.', 'mediagraph-assets' ),
+				__( 'The Mediagraph URL changed, so the previous connection was cleared. Connect again below.', 'mediagraph' ),
 				'warning'
 			);
 		}
@@ -182,15 +182,31 @@ class Mediagraph_Settings {
 	 */
 	private function platforms() {
 		return array(
-			'wordpress' => __( 'WordPress (standard)', 'mediagraph-assets' ),
+			'wordpress' => __( 'WordPress (standard)', 'mediagraph' ),
 		);
 	}
 
 	/**
-	 * Warn on every admin screen when the connection needs attention.
+	 * Screens where an expired connection is worth mentioning.
+	 *
+	 * Only the places where someone is about to reach for the picker, or is
+	 * already managing the plugin. A broken connection is not news on the
+	 * dashboard, the comments screen, or anyone else's settings page.
+	 *
+	 * @var array
+	 */
+	const NOTICE_SCREENS = array( 'post', 'upload', 'plugins' );
+
+	/**
+	 * Warn, where it is relevant, when the connection needs attention.
 	 *
 	 * The picker silently failing while the settings screen claimed
-	 * "Connected" was the single most confusing behaviour in 1.x.
+	 * "Connected" was the single most confusing behaviour in 1.x, so this
+	 * exists to make the broken state visible. It is deliberately narrow:
+	 * administrators only, dismissible, and confined to the editor, the media
+	 * library, and the plugins screen. WordPress.org guideline 11 asks that
+	 * notices be limited in scope and used with moderation, and a warning on
+	 * every admin page would fail that however useful it is.
 	 *
 	 * @return void
 	 */
@@ -201,7 +217,7 @@ class Mediagraph_Settings {
 
 		$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
 
-		if ( $screen && 'settings_page_' . self::PAGE === $screen->id ) {
+		if ( ! $screen || ! in_array( $screen->base, self::NOTICE_SCREENS, true ) ) {
 			return;
 		}
 
@@ -209,14 +225,11 @@ class Mediagraph_Settings {
 			return;
 		}
 
-		// Dismissible because this shows on every admin screen. WordPress.org
-		// guideline 11 requires that of any sitewide notice, and an editor who
-		// has seen it once should be able to get it out of the way.
 		printf(
 			'<div class="notice notice-warning is-dismissible"><p>%s <a href="%s">%s</a></p></div>',
-			esc_html__( 'The Mediagraph connection has expired, so the asset picker is unavailable.', 'mediagraph-assets' ),
+			esc_html__( 'The Mediagraph connection has expired, so the asset picker is unavailable.', 'mediagraph' ),
 			esc_url( self::url() ),
-			esc_html__( 'Reconnect', 'mediagraph-assets' )
+			esc_html__( 'Reconnect', 'mediagraph' )
 		);
 	}
 
@@ -227,7 +240,7 @@ class Mediagraph_Settings {
 	 */
 	public function render() {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You do not have permission to view this page.', 'mediagraph-assets' ) );
+			wp_die( esc_html__( 'You do not have permission to view this page.', 'mediagraph' ) );
 		}
 
 		$info = $this->credentials->connection_info();
@@ -236,7 +249,7 @@ class Mediagraph_Settings {
 		<div class="wrap mediagraph-settings">
 			<h1 class="mediagraph-settings__title">
 				<img src="<?php echo esc_url( $logo ); ?>" alt="" width="32" height="32" />
-				<?php esc_html_e( 'Mediagraph', 'mediagraph-assets' ); ?>
+				<?php esc_html_e( 'Mediagraph', 'mediagraph' ); ?>
 			</h1>
 
 			<?php $this->render_notices(); ?>
@@ -253,12 +266,12 @@ class Mediagraph_Settings {
 			<form method="post" action="options.php" class="mediagraph-settings__card">
 				<?php settings_fields( self::SETTINGS_GROUP ); ?>
 
-				<h2><?php esc_html_e( 'Configuration', 'mediagraph-assets' ); ?></h2>
+				<h2><?php esc_html_e( 'Configuration', 'mediagraph' ); ?></h2>
 
 				<table class="form-table" role="presentation">
 					<tr>
 						<th scope="row">
-							<label for="mediagraph_api_base_url"><?php esc_html_e( 'Mediagraph URL', 'mediagraph-assets' ); ?></label>
+							<label for="mediagraph_api_base_url"><?php esc_html_e( 'Mediagraph URL', 'mediagraph' ); ?></label>
 						</th>
 						<td>
 							<input
@@ -269,13 +282,13 @@ class Mediagraph_Settings {
 								class="regular-text"
 							/>
 							<p class="description">
-								<?php esc_html_e( 'Leave as https://mediagraph.io unless you use a dedicated instance. Changing this clears the current connection.', 'mediagraph-assets' ); ?>
+								<?php esc_html_e( 'Leave as https://mediagraph.io unless you use a dedicated instance. Changing this clears the current connection.', 'mediagraph' ); ?>
 							</p>
 						</td>
 					</tr>
 					<tr>
 						<th scope="row">
-							<label for="mediagraph_platform"><?php esc_html_e( 'Publishing platform', 'mediagraph-assets' ); ?></label>
+							<label for="mediagraph_platform"><?php esc_html_e( 'Publishing platform', 'mediagraph' ); ?></label>
 						</th>
 						<td>
 							<select id="mediagraph_platform" name="<?php echo esc_attr( Mediagraph_Credentials::PLATFORM ); ?>">
@@ -286,7 +299,7 @@ class Mediagraph_Settings {
 								<?php endforeach; ?>
 							</select>
 							<p class="description">
-								<?php esc_html_e( 'Controls how article metadata is shaped when usage is reported back to Mediagraph.', 'mediagraph-assets' ); ?>
+								<?php esc_html_e( 'Controls how article metadata is shaped when usage is reported back to Mediagraph.', 'mediagraph' ); ?>
 							</p>
 						</td>
 					</tr>
@@ -296,18 +309,18 @@ class Mediagraph_Settings {
 			</form>
 
 			<div class="mediagraph-settings__card">
-				<h2><?php esc_html_e( 'How assets are inserted', 'mediagraph-assets' ); ?></h2>
+				<h2><?php esc_html_e( 'How assets are inserted', 'mediagraph' ); ?></h2>
 				<p>
-					<?php esc_html_e( 'Assets chosen from Mediagraph are copied into your WordPress media library and inserted as standard blocks. That means every native control — cropping, alignment, sizes, captions, replace — works exactly as it does for uploaded files.', 'mediagraph-assets' ); ?>
+					<?php esc_html_e( 'Assets chosen from Mediagraph are copied into your WordPress media library and inserted as standard blocks. That means every native control — cropping, alignment, sizes, captions, replace — works exactly as it does for uploaded files.', 'mediagraph' ); ?>
 				</p>
 				<p>
-					<?php esc_html_e( 'Choosing the same asset twice reuses the file already in your library instead of creating a duplicate.', 'mediagraph-assets' ); ?>
+					<?php esc_html_e( 'Choosing the same asset twice reuses the file already in your library instead of creating a duplicate.', 'mediagraph' ); ?>
 				</p>
 				<p class="mediagraph-settings__meta">
 					<?php
 					printf(
 						/* translators: %s: version number. */
-						esc_html__( 'Plugin version %s', 'mediagraph-assets' ),
+						esc_html__( 'Plugin version %s', 'mediagraph' ),
 						esc_html( MEDIAGRAPH_VERSION )
 					);
 					?>
@@ -327,29 +340,29 @@ class Mediagraph_Settings {
 		?>
 		<h2 class="mediagraph-status mediagraph-status--ok">
 			<span class="dashicons dashicons-yes-alt" aria-hidden="true"></span>
-			<?php esc_html_e( 'Connected to Mediagraph', 'mediagraph-assets' ); ?>
+			<?php esc_html_e( 'Connected to Mediagraph', 'mediagraph' ); ?>
 		</h2>
 
 		<table class="form-table" role="presentation">
 			<tr>
-				<th scope="row"><?php esc_html_e( 'Account', 'mediagraph-assets' ); ?></th>
+				<th scope="row"><?php esc_html_e( 'Account', 'mediagraph' ); ?></th>
 				<td>
-					<?php echo esc_html( $info['user_name'] ? $info['user_name'] : __( 'Unknown', 'mediagraph-assets' ) ); ?>
+					<?php echo esc_html( $info['user_name'] ? $info['user_name'] : __( 'Unknown', 'mediagraph' ) ); ?>
 					<?php if ( $info['user_email'] ) : ?>
 						<br /><span class="description"><?php echo esc_html( $info['user_email'] ); ?></span>
 					<?php endif; ?>
 				</td>
 			</tr>
 			<tr>
-				<th scope="row"><?php esc_html_e( 'Organization', 'mediagraph-assets' ); ?></th>
+				<th scope="row"><?php esc_html_e( 'Organization', 'mediagraph' ); ?></th>
 				<td>
-					<?php echo esc_html( $info['organization_name'] ? $info['organization_name'] : __( 'Unknown', 'mediagraph-assets' ) ); ?>
+					<?php echo esc_html( $info['organization_name'] ? $info['organization_name'] : __( 'Unknown', 'mediagraph' ) ); ?>
 					<?php if ( $info['membership_role'] ) : ?>
 						<br /><span class="description">
 							<?php
 							printf(
 								/* translators: %s: membership role. */
-								esc_html__( 'Role: %s', 'mediagraph-assets' ),
+								esc_html__( 'Role: %s', 'mediagraph' ),
 								esc_html( ucwords( str_replace( '_', ' ', $info['membership_role'] ) ) )
 							);
 							?>
@@ -358,20 +371,20 @@ class Mediagraph_Settings {
 				</td>
 			</tr>
 			<tr>
-				<th scope="row"><?php esc_html_e( 'Access token', 'mediagraph-assets' ); ?></th>
+				<th scope="row"><?php esc_html_e( 'Access token', 'mediagraph' ); ?></th>
 				<td><?php echo esc_html( $this->token_description( $info ) ); ?></td>
 			</tr>
 		</table>
 
 		<p class="mediagraph-settings__actions">
-			<?php $this->action_button( 'mediagraph_test', __( 'Test connection', 'mediagraph-assets' ), 'secondary' ); ?>
-			<?php $this->action_button( 'mediagraph_clear_cache', __( 'Refresh asset list', 'mediagraph-assets' ), 'secondary' ); ?>
+			<?php $this->action_button( 'mediagraph_test', __( 'Test connection', 'mediagraph' ), 'secondary' ); ?>
+			<?php $this->action_button( 'mediagraph_clear_cache', __( 'Refresh asset list', 'mediagraph' ), 'secondary' ); ?>
 			<?php
 			$this->action_button(
 				'mediagraph_disconnect',
-				__( 'Disconnect', 'mediagraph-assets' ),
+				__( 'Disconnect', 'mediagraph' ),
 				'delete',
-				__( 'Disconnect this site from Mediagraph?', 'mediagraph-assets' )
+				__( 'Disconnect this site from Mediagraph?', 'mediagraph' )
 			);
 			?>
 		</p>
@@ -391,16 +404,16 @@ class Mediagraph_Settings {
 			<span class="dashicons <?php echo $expired ? 'dashicons-warning' : 'dashicons-admin-links'; ?>" aria-hidden="true"></span>
 			<?php
 			echo $expired
-				? esc_html__( 'The Mediagraph connection expired', 'mediagraph-assets' )
-				: esc_html__( 'Connect to Mediagraph', 'mediagraph-assets' );
+				? esc_html__( 'The Mediagraph connection expired', 'mediagraph' )
+				: esc_html__( 'Connect to Mediagraph', 'mediagraph' );
 			?>
 		</h2>
 
 		<p>
 			<?php
 			echo $expired
-				? esc_html__( 'Reconnect to keep browsing and inserting assets. Nothing already inserted into your posts is affected.', 'mediagraph-assets' )
-				: esc_html__( 'Authorize this site so editors can browse your Mediagraph library from inside the WordPress editor.', 'mediagraph-assets' );
+				? esc_html__( 'Reconnect to keep browsing and inserting assets. Nothing already inserted into your posts is affected.', 'mediagraph' )
+				: esc_html__( 'Authorize this site so editors can browse your Mediagraph library from inside the WordPress editor.', 'mediagraph' );
 			?>
 		</p>
 
@@ -409,7 +422,7 @@ class Mediagraph_Settings {
 			<?php wp_nonce_field( 'mediagraph_connect' ); ?>
 			<?php
 			submit_button(
-				$expired ? __( 'Reconnect to Mediagraph', 'mediagraph-assets' ) : __( 'Connect to Mediagraph', 'mediagraph-assets' ),
+				$expired ? __( 'Reconnect to Mediagraph', 'mediagraph' ) : __( 'Connect to Mediagraph', 'mediagraph' ),
 				'primary',
 				'submit',
 				false
@@ -427,20 +440,20 @@ class Mediagraph_Settings {
 	 */
 	private function token_description( array $info ) {
 		if ( empty( $info['token_expires_at'] ) ) {
-			return __( 'Active. Mediagraph did not set an expiry for this token.', 'mediagraph-assets' );
+			return __( 'Active. Mediagraph did not set an expiry for this token.', 'mediagraph' );
 		}
 
 		$remaining = (int) $info['token_expires_at'] - time();
 
 		if ( $remaining <= 0 ) {
 			return $info['can_refresh']
-				? __( 'Expired. It will renew automatically on the next request.', 'mediagraph-assets' )
-				: __( 'Expired, and it cannot be renewed. Reconnect below.', 'mediagraph-assets' );
+				? __( 'Expired. It will renew automatically on the next request.', 'mediagraph' )
+				: __( 'Expired, and it cannot be renewed. Reconnect below.', 'mediagraph' );
 		}
 
 		return sprintf(
 			/* translators: %s: human readable duration, e.g. "1 hour". */
-			__( 'Active, renews automatically. Expires in %s.', 'mediagraph-assets' ),
+			__( 'Active, renews automatically. Expires in %s.', 'mediagraph' ),
 			human_time_diff( time(), (int) $info['token_expires_at'] )
 		);
 	}
@@ -521,7 +534,7 @@ class Mediagraph_Settings {
 		check_admin_referer( $action );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You do not have permission to do that.', 'mediagraph-assets' ) );
+			wp_die( esc_html__( 'You do not have permission to do that.', 'mediagraph' ) );
 		}
 	}
 
@@ -555,16 +568,17 @@ class Mediagraph_Settings {
 		}
 
 		$notice = sanitize_key( wp_unslash( $_GET['mg_notice'] ) );
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitize_text_field is applied on the same line; the sniff does not see through rawurldecode().
 		$detail = isset( $_GET['mg_detail'] ) ? sanitize_text_field( rawurldecode( wp_unslash( $_GET['mg_detail'] ) ) ) : '';
 		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 
 		$notices = array(
-			'connected'      => array( 'success', __( 'Connected to Mediagraph.', 'mediagraph-assets' ) ),
-			'disconnected'   => array( 'success', __( 'Disconnected from Mediagraph.', 'mediagraph-assets' ) ),
-			'test_ok'        => array( 'success', __( 'Connection is working.', 'mediagraph-assets' ) ),
-			'cache_cleared'  => array( 'success', __( 'Cached collections, folders, and lightboxes were cleared.', 'mediagraph-assets' ) ),
-			'test_failed'    => array( 'error', __( 'Connection test failed.', 'mediagraph-assets' ) ),
-			'connect_failed' => array( 'error', __( 'Could not finish connecting to Mediagraph.', 'mediagraph-assets' ) ),
+			'connected'      => array( 'success', __( 'Connected to Mediagraph.', 'mediagraph' ) ),
+			'disconnected'   => array( 'success', __( 'Disconnected from Mediagraph.', 'mediagraph' ) ),
+			'test_ok'        => array( 'success', __( 'Connection is working.', 'mediagraph' ) ),
+			'cache_cleared'  => array( 'success', __( 'Cached collections, folders, and lightboxes were cleared.', 'mediagraph' ) ),
+			'test_failed'    => array( 'error', __( 'Connection test failed.', 'mediagraph' ) ),
+			'connect_failed' => array( 'error', __( 'Could not finish connecting to Mediagraph.', 'mediagraph' ) ),
 		);
 
 		if ( ! isset( $notices[ $notice ] ) ) {

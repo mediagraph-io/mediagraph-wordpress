@@ -37,7 +37,20 @@ class Mediagraph_Media_Library {
 	 *
 	 * @var array
 	 */
-	const RENDITIONS = array( 'original', 'full', 'medium', 'small' );
+	const RENDITIONS = array( 'original', 'full', 'web', 'medium', 'small' );
+
+	/**
+	 * Longest side of the "web" rendition.
+	 *
+	 * 2560 is WordPress's big_image_size_threshold. A larger image makes
+	 * WordPress keep the file it was given and add a "-scaled" copy, doubling
+	 * the storage; at 2560 or below it keeps a single file. "web" is not a
+	 * Mediagraph size: it is "full" with max_dimension, which the server
+	 * applies without ever upscaling.
+	 *
+	 * @var int
+	 */
+	const WEB_MAX_DIMENSION = 2560;
 
 	/**
 	 * HTTP client.
@@ -69,7 +82,7 @@ class Mediagraph_Media_Library {
 	 *
 	 * @param int   $asset_id  Mediagraph asset ID.
 	 * @param array $args      { Optional.
-	 *     @type string $rendition Requested rendition. Default 'full'.
+	 *     @type string $rendition Requested rendition. Default 'web'.
 	 *     @type int    $post_id   Post to attach to.
 	 *     @type array  $metadata  Editor overrides for title/caption/alt.
 	 *     @type bool   $force     Re-download even if already imported.
@@ -80,13 +93,13 @@ class Mediagraph_Media_Library {
 		$asset_id = (int) $asset_id;
 
 		if ( $asset_id <= 0 ) {
-			return new WP_Error( 'mediagraph_bad_asset', __( 'Missing asset ID.', 'mediagraph-assets' ) );
+			return new WP_Error( 'mediagraph_bad_asset', __( 'Missing asset ID.', 'mediagraph' ) );
 		}
 
 		$args = wp_parse_args(
 			$args,
 			array(
-				'rendition' => 'full',
+				'rendition' => 'web',
 				'post_id'   => 0,
 				'metadata'  => array(),
 				'force'     => false,
@@ -102,7 +115,7 @@ class Mediagraph_Media_Library {
 		if ( empty( $asset['downloadable'] ) ) {
 			return new WP_Error(
 				'mediagraph_not_downloadable',
-				__( 'You do not have permission to download this asset from Mediagraph.', 'mediagraph-assets' )
+				__( 'You do not have permission to download this asset from Mediagraph.', 'mediagraph' )
 			);
 		}
 
@@ -112,7 +125,11 @@ class Mediagraph_Media_Library {
 			$existing = $this->find_existing( $asset_id, $rendition );
 
 			if ( $existing ) {
-				$this->apply_metadata( $existing, $asset, $args['metadata'] );
+				// Reusing someone else's attachment must not let a lower-privileged
+				// user rewrite its title, caption, credit or alt text.
+				if ( current_user_can( 'edit_post', $existing ) ) {
+					$this->apply_metadata( $existing, $asset, $args['metadata'] );
+				}
 
 				return $this->payload( $existing, $asset );
 			}
@@ -157,7 +174,7 @@ class Mediagraph_Media_Library {
 		if ( ! $attachment ) {
 			return new WP_Error(
 				'mediagraph_missing_attachment',
-				__( 'The imported file could not be found in the media library.', 'mediagraph-assets' )
+				__( 'The imported file could not be found in the media library.', 'mediagraph' )
 			);
 		}
 
@@ -272,16 +289,24 @@ class Mediagraph_Media_Library {
 		require_once ABSPATH . 'wp-admin/includes/media.php';
 		require_once ABSPATH . 'wp-admin/includes/image.php';
 
-		$temp_file = $this->client->download(
-			'api/assets/' . (int) $asset['id'] . '/download',
-			array(
-				'size' => $rendition,
-				'via'  => 'wordpress',
-			)
+		$query = array(
+			'size' => $rendition,
+			'via'  => 'wordpress',
 		);
+
+		if ( 'web' === $rendition ) {
+			$query['size']          = 'full';
+			$query['max_dimension'] = self::WEB_MAX_DIMENSION;
+		}
+
+		$temp_file = $this->client->download( 'api/assets/' . (int) $asset['id'] . '/download', $query );
 
 		if ( is_wp_error( $temp_file ) ) {
 			return $temp_file;
+		}
+
+		if ( 'web' === $rendition ) {
+			$temp_file = $this->cap_dimensions( $temp_file, self::WEB_MAX_DIMENSION );
 		}
 
 		$file_array = array(
@@ -315,7 +340,7 @@ class Mediagraph_Media_Library {
 				'mediagraph_sideload_failed',
 				sprintf(
 					/* translators: %s: underlying WordPress error. */
-					__( 'WordPress could not add the file to the media library: %s', 'mediagraph-assets' ),
+					__( 'WordPress could not add the file to the media library: %s', 'mediagraph' ),
 					$attachment_id->get_error_message()
 				)
 			);
@@ -340,7 +365,7 @@ class Mediagraph_Media_Library {
 		$title   = $this->first_non_empty( array( $overrides['title'] ?? '', $this->best_title( $asset ) ) );
 		$caption = $this->first_non_empty( array( $overrides['caption'] ?? '', $asset['description'] ?? '' ) );
 		$alt     = $this->first_non_empty( array( $overrides['alt_text'] ?? '', $asset['alt_text'] ?? '', $asset['title'] ?? '' ) );
-		$credit  = $this->first_non_empty( array( $overrides['credit'] ?? '', $asset['credit_line'] ?? '' ) );
+		$credit  = $this->first_non_empty( array( $overrides['credit'] ?? '', $asset['credit_line'] ?? '', $asset['creator'] ?? '' ) );
 
 		$update = array( 'ID' => $attachment_id );
 
@@ -363,6 +388,11 @@ class Mediagraph_Media_Library {
 		if ( '' !== $alt ) {
 			update_post_meta( $attachment_id, '_wp_attachment_image_alt', $alt );
 		}
+
+		// Newspack (and the Media Credit plugin) display credits from this key.
+		if ( '' !== $credit ) {
+			update_post_meta( $attachment_id, '_media_credit', $credit );
+		}
 	}
 
 	/**
@@ -381,7 +411,7 @@ class Mediagraph_Media_Library {
 			? $asset['renditions']
 			: array();
 
-		$requested = in_array( $requested, self::RENDITIONS, true ) ? $requested : 'full';
+		$requested = in_array( $requested, self::RENDITIONS, true ) ? $requested : 'web';
 
 		if ( empty( $available ) ) {
 			// The detail endpoint did not report renditions; trust the request.
@@ -475,6 +505,59 @@ class Mediagraph_Media_Library {
 		}
 
 		return '';
+	}
+
+	/**
+	 * Shrink an image so its longest side is at most $max pixels.
+	 *
+	 * Mediagraph servers that support max_dimension already did this, and the
+	 * file passes through untouched. Older servers ignore the parameter and
+	 * send full resolution. Without this step that file would be stored as the
+	 * "web" rendition, and deduplication would keep reusing it.
+	 *
+	 * Anything that cannot be read or resized is returned unchanged; WordPress
+	 * then falls back to its own "-scaled" handling.
+	 *
+	 * @param string $file Downloaded temp file.
+	 * @param int    $max  Longest side, in pixels.
+	 * @return string Path of the file to sideload.
+	 */
+	private function cap_dimensions( $file, $max ) {
+		$mime = $this->detect_mime( $file );
+
+		if ( ! in_array( $mime, array( 'image/jpeg', 'image/png', 'image/webp' ), true ) ) {
+			return $file;
+		}
+
+		$editor = wp_get_image_editor( $file, array( 'mime_type' => $mime ) );
+
+		if ( is_wp_error( $editor ) ) {
+			return $file;
+		}
+
+		$size = $editor->get_size();
+
+		if ( empty( $size['width'] ) || max( $size['width'], $size['height'] ) <= $max ) {
+			return $file;
+		}
+
+		$editor->set_quality( 90 );
+
+		$resized = $editor->resize( $max, $max, false );
+
+		if ( is_wp_error( $resized ) ) {
+			return $file;
+		}
+
+		$saved = $editor->save( $file . '.' . $this->extension_for_mime( $mime ), $mime );
+
+		if ( is_wp_error( $saved ) || empty( $saved['path'] ) || ! file_exists( $saved['path'] ) ) {
+			return $file;
+		}
+
+		wp_delete_file( $file );
+
+		return $saved['path'];
 	}
 
 	/**

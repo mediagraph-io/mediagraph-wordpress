@@ -108,13 +108,13 @@ export function date( value ) {
  */
 export function resultRange( page, perPage, total ) {
 	if ( ! total ) {
-		return __( 'No assets', 'mediagraph-assets' );
+		return __( 'No assets', 'mediagraph' );
 	}
 
 	if ( total <= perPage ) {
 		return sprintf(
 			/* translators: %s: number of assets. */
-			__( '%s assets', 'mediagraph-assets' ),
+			__( '%s assets', 'mediagraph' ),
 			total.toLocaleString()
 		);
 	}
@@ -124,7 +124,7 @@ export function resultRange( page, perPage, total ) {
 
 	return sprintf(
 		/* translators: 1: first result, 2: last result, 3: total results. */
-		__( '%1$s–%2$s of %3$s assets', 'mediagraph-assets' ),
+		__( '%1$s–%2$s of %3$s assets', 'mediagraph' ),
 		first.toLocaleString(),
 		last.toLocaleString(),
 		total.toLocaleString()
@@ -140,16 +140,16 @@ export function resultRange( page, perPage, total ) {
 export function kindLabel( kind ) {
 	switch ( kind ) {
 		case 'image':
-			return __( 'Image', 'mediagraph-assets' );
+			return __( 'Image', 'mediagraph' );
 		case 'video':
-			return __( 'Video', 'mediagraph-assets' );
+			return __( 'Video', 'mediagraph' );
 		case 'audio':
-			return __( 'Audio', 'mediagraph-assets' );
+			return __( 'Audio', 'mediagraph' );
 		case 'font':
-			return __( 'Font', 'mediagraph-assets' );
+			return __( 'Font', 'mediagraph' );
 		case 'text':
-			return __( 'Text', 'mediagraph-assets' );
+			return __( 'Text', 'mediagraph' );
 		default:
-			return __( 'Document', 'mediagraph-assets' );
+			return __( 'Document', 'mediagraph' );
 	}
 }

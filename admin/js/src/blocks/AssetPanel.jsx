@@ -129,11 +129,11 @@ export default function AssetPanel( { blockProps } ) {
 				alt_text: fields.alt,
 			} );
 
-			setStatus( { type: 'success', text: __( 'Saved to the media library.', 'mediagraph-assets' ) } );
+			setStatus( { type: 'success', text: __( 'Saved to the media library.', 'mediagraph' ) } );
 		} catch ( error ) {
 			setStatus( {
 				type: 'error',
-				text: error?.message || __( 'Could not save. Please try again.', 'mediagraph-assets' ),
+				text: error?.message || __( 'Could not save. Please try again.', 'mediagraph' ),
 			} );
 		} finally {
 			setSaving( false );
@@ -142,31 +142,31 @@ export default function AssetPanel( { blockProps } ) {
 
 	return (
 		<InspectorControls>
-			<PanelBody title={ __( 'Mediagraph', 'mediagraph-assets' ) } initialOpen={ true }>
+			<PanelBody title={ __( 'Mediagraph', 'mediagraph' ) } initialOpen={ true }>
 				<TextControl
-					label={ __( 'Title', 'mediagraph-assets' ) }
+					label={ __( 'Title', 'mediagraph' ) }
 					value={ fields.title }
 					onChange={ ( value ) => update( 'title', value ) }
 				/>
 
 				<TextareaControl
-					label={ __( 'Caption', 'mediagraph-assets' ) }
-					help={ __( 'Shown beneath the asset in the post.', 'mediagraph-assets' ) }
+					label={ __( 'Caption', 'mediagraph' ) }
+					help={ __( 'Shown beneath the asset in the post.', 'mediagraph' ) }
 					rows={ 3 }
 					value={ fields.caption }
 					onChange={ ( value ) => update( 'caption', value ) }
 				/>
 
 				<TextareaControl
-					label={ __( 'Alt text', 'mediagraph-assets' ) }
-					help={ __( 'Describes the asset for screen readers.', 'mediagraph-assets' ) }
+					label={ __( 'Alt text', 'mediagraph' ) }
+					help={ __( 'Describes the asset for screen readers.', 'mediagraph' ) }
 					rows={ 2 }
 					value={ fields.alt }
 					onChange={ ( value ) => update( 'alt', value ) }
 				/>
 
 				<TextControl
-					label={ __( 'Credit', 'mediagraph-assets' ) }
+					label={ __( 'Credit', 'mediagraph' ) }
 					value={ fields.credit }
 					onChange={ ( value ) => update( 'credit', value ) }
 				/>
@@ -179,14 +179,14 @@ export default function AssetPanel( { blockProps } ) {
 
 				<Button variant="secondary" onClick={ save } disabled={ saving } __next40pxDefaultSize>
 					{ saving
-						? __( 'Saving…', 'mediagraph-assets' )
-						: __( 'Save to media library', 'mediagraph-assets' ) }
+						? __( 'Saving…', 'mediagraph' )
+						: __( 'Save to media library', 'mediagraph' ) }
 				</Button>
 
 				<p className="mediagraph-panel__help">
 					{ __(
 						'Caption and alt text update this post as you type. Saving also writes all four fields onto the media item, so the next post that uses this asset starts from them.',
-						'mediagraph-assets'
+						'mediagraph'
 					) }
 				</p>
 			</PanelBody>

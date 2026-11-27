@@ -13,9 +13,9 @@ import { __ } from '@wordpress/i18n';
  * so only the wording changes here.
  */
 const SECTIONS = [
-	{ key: 'folders', label: __( 'File Vault', 'mediagraph-assets' ) },
-	{ key: 'collections', label: __( 'Libraries', 'mediagraph-assets' ) },
-	{ key: 'lightboxes', label: __( 'My Projects', 'mediagraph-assets' ) },
+	{ key: 'folders', label: __( 'File Vault', 'mediagraph' ) },
+	{ key: 'collections', label: __( 'Libraries', 'mediagraph' ) },
+	{ key: 'lightboxes', label: __( 'My Projects', 'mediagraph' ) },
 ];
 
 const STORAGE_KEY = 'mediagraph_collapsed_sections';
@@ -150,8 +150,8 @@ export default function Sidebar( {
 							aria-expanded={ isExpanded }
 							aria-label={
 								isExpanded
-									? __( 'Collapse', 'mediagraph-assets' )
-									: __( 'Expand', 'mediagraph-assets' )
+									? __( 'Collapse', 'mediagraph' )
+									: __( 'Expand', 'mediagraph' )
 							}
 						>
 							<span
@@ -185,7 +185,7 @@ export default function Sidebar( {
 				{ isExpanded && showDisclosure && (
 					<ul className="mg-tree__children">
 						{ isBusy && nodeChildren.length === 0 ? (
-							<li className="mg-tree__hint">{ __( 'Loading…', 'mediagraph-assets' ) }</li>
+							<li className="mg-tree__hint">{ __( 'Loading…', 'mediagraph' ) }</li>
 						) : (
 							nodeChildren.map( ( child ) => renderNode( child, depth + 1 ) )
 						) }
@@ -196,9 +196,9 @@ export default function Sidebar( {
 	};
 
 	return (
-		<nav className="mg-sidebar" aria-label={ __( 'Browse Mediagraph', 'mediagraph-assets' ) }>
+		<nav className="mg-sidebar" aria-label={ __( 'Browse Mediagraph', 'mediagraph' ) }>
 			<div className="mg-sidebar__header">
-				<span>{ __( 'Browse', 'mediagraph-assets' ) }</span>
+				<span>{ __( 'Browse', 'mediagraph' ) }</span>
 			</div>
 
 			<button
@@ -206,7 +206,7 @@ export default function Sidebar( {
 				className={ `mg-tree__label mg-sidebar__all ${ ! current ? 'is-active' : '' }` }
 				onClick={ () => onSelect( null ) }
 			>
-				{ __( 'All assets', 'mediagraph-assets' ) }
+				{ __( 'All assets', 'mediagraph' ) }
 			</button>
 
 			{ containers.errors?.all && (
@@ -242,9 +242,9 @@ export default function Sidebar( {
 								{ sectionError ? (
 									<p className="mg-sidebar__error">{ sectionError }</p>
 								) : loading && items.length === 0 ? (
-									<p className="mg-tree__hint">{ __( 'Loading…', 'mediagraph-assets' ) }</p>
+									<p className="mg-tree__hint">{ __( 'Loading…', 'mediagraph' ) }</p>
 								) : items.length === 0 ? (
-									<p className="mg-tree__hint">{ __( 'None available', 'mediagraph-assets' ) }</p>
+									<p className="mg-tree__hint">{ __( 'None available', 'mediagraph' ) }</p>
 								) : (
 									<ul className="mg-tree">{ items.map( ( node ) => renderNode( node ) ) }</ul>
 								) }

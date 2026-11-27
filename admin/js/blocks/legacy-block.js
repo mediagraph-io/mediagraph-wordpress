@@ -89,8 +89,8 @@
 		window.Mediagraph.open( {
 			types: attrs.assetType ? [ attrs.assetType ] : [],
 			multiple: false,
-			title: __( 'Convert to a native block', 'mediagraph-assets' ),
-			confirmLabel: __( 'Convert', 'mediagraph-assets' ),
+			title: __( 'Convert to a native block', 'mediagraph' ),
+			confirmLabel: __( 'Convert', 'mediagraph' ),
 			onSelect: function ( attachments ) {
 				var attachment = attachments && attachments[ 0 ];
 
@@ -122,10 +122,10 @@
 
 	registerBlockType( 'mediagraph/asset-picker', {
 		apiVersion: 2,
-		title: __( 'Mediagraph asset (legacy)', 'mediagraph-assets' ),
+		title: __( 'Mediagraph asset (legacy)', 'mediagraph' ),
 		description: __(
 			'An asset inserted by an older version of the Mediagraph plugin. Convert it to a standard block to use the normal editing controls.',
-			'mediagraph-assets'
+			'mediagraph'
 		),
 		category: 'media',
 		icon: 'format-gallery',
@@ -151,7 +151,7 @@
 						null,
 						el( ToolbarButton, {
 							icon: 'update',
-							label: __( 'Convert to a standard block', 'mediagraph-assets' ),
+							label: __( 'Convert to a standard block', 'mediagraph' ),
 							onClick: function () {
 								convert( props );
 							},
@@ -166,7 +166,7 @@
 						{ status: 'info', isDismissible: false },
 						__(
 							'Legacy Mediagraph asset. Convert it to a standard block to get cropping, sizes, and the usual image controls.',
-							'mediagraph-assets'
+							'mediagraph'
 						)
 					),
 					el( 'div', {

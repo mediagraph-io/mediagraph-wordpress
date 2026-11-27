@@ -60,7 +60,7 @@ export default function DetailsPanel( {
 	onAnnotate = () => {},
 	onClose,
 	renditions = [],
-	rendition = 'full',
+	rendition = 'web',
 	onRenditionChange = () => {},
 	multiple = false,
 	selectedCount = 0,
@@ -138,16 +138,16 @@ export default function DetailsPanel( {
 		: availableRenditions[ 0 ]?.value || rendition;
 
 	return (
-		<aside className="mg-panel" aria-label={ __( 'Asset details', 'mediagraph-assets' ) }>
+		<aside className="mg-panel" aria-label={ __( 'Asset details', 'mediagraph' ) }>
 			<header className="mg-panel__header">
 				<h3 className="mg-panel__title" title={ detail.filename }>
-					{ detail.filename || __( 'Asset', 'mediagraph-assets' ) }
+					{ detail.filename || __( 'Asset', 'mediagraph' ) }
 				</h3>
 				<button
 					type="button"
 					className="mg-panel__close"
 					onClick={ onClose }
-					aria-label={ __( 'Close details', 'mediagraph-assets' ) }
+					aria-label={ __( 'Close details', 'mediagraph' ) }
 				>
 					<span aria-hidden="true">×</span>
 				</button>
@@ -173,26 +173,26 @@ export default function DetailsPanel( {
 				{ /* Just the physical facts about the file, so the identity of
 				     what you are looking at is settled before anything else. */ }
 				<dl className="mg-panel__properties mg-panel__properties--brief">
-					<Property label={ __( 'Type', 'mediagraph-assets' ) } value={ kindLabel( detail.kind ) } />
+					<Property label={ __( 'Type', 'mediagraph' ) } value={ kindLabel( detail.kind ) } />
 					<Property
-						label={ __( 'Dimensions', 'mediagraph-assets' ) }
+						label={ __( 'Dimensions', 'mediagraph' ) }
 						value={ dimensions( detail.width, detail.height ) }
 					/>
-					<Property label={ __( 'Size', 'mediagraph-assets' ) } value={ fileSize( detail.file_size ) } />
-					<Property label={ __( 'Duration', 'mediagraph-assets' ) } value={ duration( detail.duration ) } />
+					<Property label={ __( 'Size', 'mediagraph' ) } value={ fileSize( detail.file_size ) } />
+					<Property label={ __( 'Duration', 'mediagraph' ) } value={ duration( detail.duration ) } />
 				</dl>
 
 				<div className="mg-panel__section mg-panel__section--edit">
-					<h4>{ __( 'How it appears in WordPress', 'mediagraph-assets' ) }</h4>
+					<h4>{ __( 'How it appears in WordPress', 'mediagraph' ) }</h4>
 					<p className="mg-panel__help">
 						{ __(
 							'These are saved onto the WordPress media item. Editing them here does not change anything in Mediagraph.',
-							'mediagraph-assets'
+							'mediagraph'
 						) }
 					</p>
 
 					<label className="mg-field">
-						<span>{ __( 'Title', 'mediagraph-assets' ) }</span>
+						<span>{ __( 'Title', 'mediagraph' ) }</span>
 						<input
 							type="text"
 							value={ fields.title }
@@ -201,7 +201,7 @@ export default function DetailsPanel( {
 					</label>
 
 					<label className="mg-field">
-						<span>{ __( 'Caption', 'mediagraph-assets' ) }</span>
+						<span>{ __( 'Caption', 'mediagraph' ) }</span>
 						<textarea
 							rows="2"
 							value={ fields.caption }
@@ -210,7 +210,7 @@ export default function DetailsPanel( {
 					</label>
 
 					<label className="mg-field">
-						<span>{ __( 'Alt text', 'mediagraph-assets' ) }</span>
+						<span>{ __( 'Alt text', 'mediagraph' ) }</span>
 						<textarea
 							rows="2"
 							value={ fields.alt_text }
@@ -219,7 +219,7 @@ export default function DetailsPanel( {
 					</label>
 
 					<label className="mg-field">
-						<span>{ __( 'Credit', 'mediagraph-assets' ) }</span>
+						<span>{ __( 'Credit', 'mediagraph' ) }</span>
 						<input
 							type="text"
 							value={ fields.credit }
@@ -229,7 +229,7 @@ export default function DetailsPanel( {
 
 					{ availableRenditions.length > 1 && (
 						<label className="mg-field">
-							<span>{ __( 'Download quality', 'mediagraph-assets' ) }</span>
+							<span>{ __( 'Download quality', 'mediagraph' ) }</span>
 							<select
 								value={ selectedRendition }
 								onChange={ ( event ) => onRenditionChange( event.target.value ) }
@@ -243,7 +243,7 @@ export default function DetailsPanel( {
 							<span className="mg-field__help">
 								{ __(
 									'WordPress generates its own thumbnail and medium sizes from whatever you choose here.',
-									'mediagraph-assets'
+									'mediagraph'
 								) }
 							</span>
 						</label>
@@ -251,21 +251,21 @@ export default function DetailsPanel( {
 				</div>
 
 				<div className="mg-panel__section">
-					<h4>{ __( 'Mediagraph details', 'mediagraph-assets' ) }</h4>
+					<h4>{ __( 'Mediagraph details', 'mediagraph' ) }</h4>
 					<p className="mg-panel__help">
-						{ __( 'Read-only. Edit these in Mediagraph.', 'mediagraph-assets' ) }
+						{ __( 'Read-only. Edit these in Mediagraph.', 'mediagraph' ) }
 					</p>
 
 					<dl className="mg-panel__properties">
-						<Property label={ __( 'Headline', 'mediagraph-assets' ) } value={ detail.headline } />
-						<Property label={ __( 'Creator', 'mediagraph-assets' ) } value={ detail.creator } />
-						<Property label={ __( 'Credit', 'mediagraph-assets' ) } value={ detail.credit_line } />
-						<Property label={ __( 'Event', 'mediagraph-assets' ) } value={ detail.event } />
-						<Property label={ __( 'Location', 'mediagraph-assets' ) } value={ detail.location } />
-						<Property label={ __( 'Date created', 'mediagraph-assets' ) } value={ date( detail.captured_at ) } />
-						<Property label={ __( 'Date added', 'mediagraph-assets' ) } value={ date( detail.created_at ) } />
-						<Property label={ __( 'Keywords', 'mediagraph-assets' ) } value={ detail.keywords } />
-						<Property label={ __( 'Usage terms', 'mediagraph-assets' ) } value={ detail.usage_terms } />
+						<Property label={ __( 'Headline', 'mediagraph' ) } value={ detail.headline } />
+						<Property label={ __( 'Creator', 'mediagraph' ) } value={ detail.creator } />
+						<Property label={ __( 'Credit', 'mediagraph' ) } value={ detail.credit_line } />
+						<Property label={ __( 'Event', 'mediagraph' ) } value={ detail.event } />
+						<Property label={ __( 'Location', 'mediagraph' ) } value={ detail.location } />
+						<Property label={ __( 'Date created', 'mediagraph' ) } value={ date( detail.captured_at ) } />
+						<Property label={ __( 'Date added', 'mediagraph' ) } value={ date( detail.created_at ) } />
+						<Property label={ __( 'Keywords', 'mediagraph' ) } value={ detail.keywords } />
+						<Property label={ __( 'Usage terms', 'mediagraph' ) } value={ detail.usage_terms } />
 
 						{ ( detail.custom_meta || [] ).map( ( item ) => (
 							<Property key={ item.name } label={ item.name } value={ item.value } />
@@ -282,7 +282,7 @@ export default function DetailsPanel( {
 					{ restricted ? (
 						<p className="mg-panel__restricted">
 							<span className="dashicons dashicons-lock" aria-hidden="true" />
-							{ __( 'You do not have download permission for this asset.', 'mediagraph-assets' ) }
+							{ __( 'You do not have download permission for this asset.', 'mediagraph' ) }
 						</p>
 					) : (
 						<p className="mg-panel__note">
@@ -292,7 +292,7 @@ export default function DetailsPanel( {
 									'%d asset selected. Your edits are kept for each one.',
 									'%d assets selected. Your edits are kept for each one.',
 									selectedCount,
-									'mediagraph-assets'
+									'mediagraph'
 								),
 								selectedCount
 							) }

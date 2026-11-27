@@ -106,7 +106,7 @@ export default function FilterBar( {
 			{ rightsClasses.length > 0 && (
 				<div className="mg-filter mg-filter--wide">
 					<fieldset className="mg-filter__group">
-						<legend className="mg-filter__label">{ __( 'Rights status', 'mediagraph-assets' ) }</legend>
+						<legend className="mg-filter__label">{ __( 'Rights status', 'mediagraph' ) }</legend>
 						<div className="mg-filter__checks">
 							{ rightsClasses.map( ( option ) => (
 								<label className="mg-filter__check" key={ option.value }>
@@ -120,20 +120,20 @@ export default function FilterBar( {
 							) ) }
 						</div>
 						<span className="mg-filter__hint">
-							{ __( 'Selecting more than one matches any of them.', 'mediagraph-assets' ) }
+							{ __( 'Selecting more than one matches any of them.', 'mediagraph' ) }
 						</span>
 					</fieldset>
 				</div>
 			) }
 
 			{ creators.length > 0 && (
-				<Cell label={ __( 'Creator', 'mediagraph-assets' ) } htmlFor="mg-filter-creator">
+				<Cell label={ __( 'Creator', 'mediagraph' ) } htmlFor="mg-filter-creator">
 					<select
 						id="mg-filter-creator"
 						value={ creator || '' }
 						onChange={ ( event ) => onCreatorChange( Number( event.target.value ) || 0 ) }
 					>
-						<option value="">{ __( 'Anyone', 'mediagraph-assets' ) }</option>
+						<option value="">{ __( 'Anyone', 'mediagraph' ) }</option>
 						{ creators.map( ( option ) => (
 							<option key={ option.value } value={ option.value }>
 								{ option.count === null
@@ -146,12 +146,12 @@ export default function FilterBar( {
 			) }
 
 			<Cell
-				label={ __( 'Date created', 'mediagraph-assets' ) }
+				label={ __( 'Date created', 'mediagraph' ) }
 				htmlFor="mg-filter-date-from"
 				hint={
 					halfRange
-						? __( 'Set both dates to apply this filter.', 'mediagraph-assets' )
-						: __( 'Assets with no capture date are excluded.', 'mediagraph-assets' )
+						? __( 'Set both dates to apply this filter.', 'mediagraph' )
+						: __( 'Assets with no capture date are excluded.', 'mediagraph' )
 				}
 			>
 				<div className="mg-filter__range">
@@ -161,7 +161,7 @@ export default function FilterBar( {
 						value={ dateFrom }
 						max={ dateTo || undefined }
 						onChange={ ( event ) => onDatesChange( event.target.value, dateTo ) }
-						aria-label={ __( 'Created on or after', 'mediagraph-assets' ) }
+						aria-label={ __( 'Created on or after', 'mediagraph' ) }
 					/>
 					<span className="mg-filter__range-sep" aria-hidden="true">
 						–
@@ -171,19 +171,19 @@ export default function FilterBar( {
 						value={ dateTo }
 						min={ dateFrom || undefined }
 						onChange={ ( event ) => onDatesChange( dateFrom, event.target.value ) }
-						aria-label={ __( 'Created on or before', 'mediagraph-assets' ) }
+						aria-label={ __( 'Created on or before', 'mediagraph' ) }
 					/>
 				</div>
 			</Cell>
 
-			<Cell label={ __( 'Options', 'mediagraph-assets' ) }>
+			<Cell label={ __( 'Options', 'mediagraph' ) }>
 				<label className="mg-filter__check">
 					<input
 						type="checkbox"
 						checked={ showAll }
 						onChange={ ( event ) => onShowAll( event.target.checked ) }
 					/>
-					<span>{ __( 'Include assets I cannot download', 'mediagraph-assets' ) }</span>
+					<span>{ __( 'Include assets I cannot download', 'mediagraph' ) }</span>
 				</label>
 			</Cell>
 
@@ -194,7 +194,7 @@ export default function FilterBar( {
 			{ fields.length > 0 && (
 				<section className="mg-filters__custom">
 					<h4 className="mg-filters__custom-title">
-						{ __( 'Custom metadata', 'mediagraph-assets' ) }
+						{ __( 'Custom metadata', 'mediagraph' ) }
 						<span className="mg-filters__custom-count">{ fields.length }</span>
 					</h4>
 
@@ -209,8 +209,8 @@ export default function FilterBar( {
 										value={ values[ field.name ] || '' }
 										onChange={ ( event ) => update( field.name, event.target.value ) }
 									>
-										<option value="">{ __( 'Any', 'mediagraph-assets' ) }</option>
-										<option value={ BLANK }>{ __( '— Not set —', 'mediagraph-assets' ) }</option>
+										<option value="">{ __( 'Any', 'mediagraph' ) }</option>
+										<option value={ BLANK }>{ __( '— Not set —', 'mediagraph' ) }</option>
 										{ field.values.map( ( value ) => (
 											<option key={ value } value={ value }>
 												{ value }

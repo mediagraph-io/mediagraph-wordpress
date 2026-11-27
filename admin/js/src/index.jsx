@@ -101,7 +101,7 @@ function open( options = {} ) {
 
 	if ( ! isConnected() ) {
 		instance.render(
-			<Modal onClose={ handleClose } label={ __( 'Mediagraph', 'mediagraph-assets' ) }>
+			<Modal onClose={ handleClose } label={ __( 'Mediagraph', 'mediagraph' ) }>
 				<NotConnected onClose={ handleClose } />
 			</Modal>
 		);
@@ -110,7 +110,7 @@ function open( options = {} ) {
 	}
 
 	instance.render(
-		<Modal onClose={ handleClose } label={ title || __( 'Mediagraph assets', 'mediagraph-assets' ) }>
+		<Modal onClose={ handleClose } label={ title || __( 'Mediagraph assets', 'mediagraph' ) }>
 			<Picker
 				types={ types }
 				multiple={ multiple }

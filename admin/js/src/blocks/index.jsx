@@ -105,7 +105,7 @@ function reportFailures( failures ) {
 			'%d Mediagraph asset could not be added.',
 			'%d Mediagraph assets could not be added.',
 			failures.length,
-			'mediagraph-assets'
+			'mediagraph'
 		),
 		failures.length
 	);
@@ -144,11 +144,11 @@ function PlaceholderButton( props ) {
 				openPicker( {
 					types: kinds,
 					multiple,
-					title: __( 'Add from Mediagraph', 'mediagraph-assets' ),
+					title: __( 'Add from Mediagraph', 'mediagraph' ),
 					onSelect: selectHandler( props, multiple ),
 				} ),
 		},
-		__( 'Mediagraph', 'mediagraph-assets' )
+		__( 'Mediagraph', 'mediagraph' )
 	);
 }
 
@@ -220,7 +220,7 @@ addFilter( 'editor.MediaReplaceFlow', 'mediagraph/media-replace-flow', ( MediaRe
 
 		const multiple = Boolean( props.multiple );
 		const kinds = kindsFromAllowedTypes( props.allowedTypes );
-		const label = __( 'Mediagraph', 'mediagraph-assets' );
+		const label = __( 'Mediagraph', 'mediagraph' );
 
 		// Core renders these children inside its own NavigableMenu, between
 		// "Use featured image" and "Reset", and supports the function form so a
@@ -246,7 +246,7 @@ addFilter( 'editor.MediaReplaceFlow', 'mediagraph/media-replace-flow', ( MediaRe
 							openPicker( {
 								types: kinds,
 								multiple,
-								title: __( 'Replace from Mediagraph', 'mediagraph-assets' ),
+								title: __( 'Replace from Mediagraph', 'mediagraph' ),
 								onSelect: selectHandler( props, multiple ),
 							} );
 						},
@@ -321,8 +321,8 @@ const withMediagraphToolbar = createHigherOrderComponent( ( BlockEdit ) => {
 
 		const isGallery = props.name === 'core/gallery';
 		const label = isGallery
-			? __( 'Add from Mediagraph', 'mediagraph-assets' )
-			: __( 'Insert from Mediagraph', 'mediagraph-assets' );
+			? __( 'Add from Mediagraph', 'mediagraph' )
+			: __( 'Insert from Mediagraph', 'mediagraph' );
 
 		return el(
 			Fragment,
